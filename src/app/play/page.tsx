@@ -16,6 +16,7 @@ function PlayContent() {
 
   const {
     game,
+    rackLayout,
     selectedTileId,
     timeRemaining,
     error,
@@ -26,6 +27,9 @@ function PlayContent() {
     handleDiscard,
     handleDeclareWin,
     handleTileSelect,
+    handleTileMove,
+    handleSortByGroups,
+    handleSortByRuns,
   } = useGame({
     mode,
     playerName: playerName || 'Oyuncu',
@@ -180,13 +184,18 @@ function PlayContent() {
           <GameBoard
             game={game}
             currentPlayerId={playerId}
+            rackLayout={rackLayout}
             selectedTileId={selectedTileId}
             onTileSelect={handleTileSelect}
             onDrawFromPile={handleDrawFromPile}
             onDrawFromDiscard={handleDrawFromDiscard}
             onDiscard={handleDiscard}
             onDeclareWin={handleDeclareWin}
+            onTileMove={handleTileMove}
+            onSortByGroups={handleSortByGroups}
+            onSortByRuns={handleSortByRuns}
             timeRemaining={timeRemaining}
+            isProcessingAI={isProcessingAI}
           />
         )}
       </main>

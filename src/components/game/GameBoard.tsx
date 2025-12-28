@@ -8,12 +8,14 @@ import { cn } from '@/lib/utils';
 interface GameBoardProps {
   game: GameState;
   currentPlayerId: string;
+  rackLayout: (string | null)[];
   selectedTileId: string | null;
   onTileSelect: (tile: TileType) => void;
   onDrawFromPile: () => void;
   onDrawFromDiscard: () => void;
   onDiscard: () => void;
   onDeclareWin: () => void;
+  onTileMove?: (fromIndex: number, toIndex: number) => void;
   onSortByGroups?: () => void;
   onSortByRuns?: () => void;
   timeRemaining?: number;
@@ -23,12 +25,14 @@ interface GameBoardProps {
 export function GameBoard({
   game,
   currentPlayerId,
+  rackLayout,
   selectedTileId,
   onTileSelect,
   onDrawFromPile,
   onDrawFromDiscard,
   onDiscard,
   onDeclareWin,
+  onTileMove,
   onSortByGroups,
   onSortByRuns,
   timeRemaining = 30,
@@ -235,13 +239,16 @@ export function GameBoard({
           <div className="flex justify-center overflow-x-auto pb-2">
             <PlayerRack
               tiles={currentPlayer.tiles}
+              rackLayout={rackLayout}
               okeyTile={game.okeyTile}
               selectedTileId={selectedTileId}
               onTileSelect={onTileSelect}
+              onTileMove={onTileMove}
               onSortByGroups={onSortByGroups}
               onSortByRuns={onSortByRuns}
               isCurrentPlayer={isMyTurn}
-              canInteract={isMyTurn && game.turnPhase === 'discard'}
+              canSelect={isMyTurn && game.turnPhase === 'discard'}
+              canRearrange={true}
             />
           </div>
         )}

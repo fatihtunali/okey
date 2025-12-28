@@ -6,7 +6,8 @@ import { Tile, TileSlot } from './Tile';
 import { cn } from '@/lib/utils';
 
 interface PlayerRackProps {
-  tiles: (TileType | null)[];  // Now supports null for empty slots
+  tiles: TileType[];  // All tiles the player has
+  rackLayout: (string | null)[];  // 30 slots with tile IDs or null
   okeyTile?: TileType | null;
   selectedTileId?: string | null;
   onTileSelect?: (tile: TileType) => void;
@@ -14,7 +15,8 @@ interface PlayerRackProps {
   onSortByGroups?: () => void;
   onSortByRuns?: () => void;
   isCurrentPlayer?: boolean;
-  canInteract?: boolean;
+  canSelect?: boolean;  // Can select tiles for discarding (only on your turn)
+  canRearrange?: boolean;  // Can drag/drop to rearrange (always allowed)
   className?: string;
 }
 
@@ -23,6 +25,7 @@ const SLOTS_PER_ROW = 15;
 
 export function PlayerRack({
   tiles,
+  rackLayout,
   okeyTile,
   selectedTileId,
   onTileSelect,
@@ -30,21 +33,20 @@ export function PlayerRack({
   onSortByGroups,
   onSortByRuns,
   isCurrentPlayer = false,
-  canInteract = true,
+  canSelect = false,
+  canRearrange = true,
   className,
 }: PlayerRackProps) {
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
 
-  // Create a fixed-size array with tiles and empty slots
-  const rackSlots: (TileType | null)[] = Array(SLOTS_PER_ROW * 2).fill(null);
+  // Create a map of tile ID to tile object for quick lookup
+  const tileMap = new Map(tiles.map(tile => [tile.id, tile]));
 
-  // Place tiles in slots (spread them out initially)
-  tiles.forEach((tile, i) => {
-    if (tile) {
-      rackSlots[i] = tile;
-    }
-  });
+  // Convert rackLayout (tile IDs) to actual tiles
+  const rackSlots: (TileType | null)[] = rackLayout.map(tileId =>
+    tileId ? tileMap.get(tileId) || null : null
+  );
 
   // Split into two rows
   const topRow = rackSlots.slice(0, SLOTS_PER_ROW);
@@ -82,13 +84,13 @@ export function PlayerRack({
       return (
         <div
           key={`slot-${absoluteIndex}`}
-          draggable={canInteract}
-          onDragStart={() => handleDragStart(absoluteIndex)}
-          onDragOver={(e) => handleDragOver(e, absoluteIndex)}
-          onDrop={(e) => handleDrop(e, absoluteIndex)}
+          draggable={canRearrange}
+          onDragStart={() => canRearrange && handleDragStart(absoluteIndex)}
+          onDragOver={(e) => canRearrange && handleDragOver(e, absoluteIndex)}
+          onDrop={(e) => canRearrange && handleDrop(e, absoluteIndex)}
           onDragEnd={handleDragEnd}
           className={cn(
-            'transition-all duration-150',
+            'transition-all duration-150 cursor-grab active:cursor-grabbing',
             isBeingDragged && 'opacity-50 scale-95',
             isDragOver && 'scale-110'
           )}
@@ -97,7 +99,7 @@ export function PlayerRack({
             tile={tile}
             okeyTile={okeyTile}
             isSelected={selectedTileId === tile.id}
-            onClick={() => canInteract && onTileSelect?.(tile)}
+            onClick={() => canSelect && onTileSelect?.(tile)}
             size="lg"
           />
         </div>
@@ -108,8 +110,8 @@ export function PlayerRack({
     return (
       <div
         key={`empty-${absoluteIndex}`}
-        onDragOver={(e) => handleDragOver(e, absoluteIndex)}
-        onDrop={(e) => handleDrop(e, absoluteIndex)}
+        onDragOver={(e) => canRearrange && handleDragOver(e, absoluteIndex)}
+        onDrop={(e) => canRearrange && handleDrop(e, absoluteIndex)}
         className={cn(
           'w-14 h-[72px] rounded-lg',
           'bg-amber-900/30',

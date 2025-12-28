@@ -22,6 +22,8 @@ interface UseGameOptions {
   turnTimeLimit?: number;
 }
 
+const RACK_SIZE = 30; // 15 slots per row, 2 rows
+
 export function useGame(options: UseGameOptions) {
   const [game, setGame] = useState<GameState | null>(null);
   const [selectedTileId, setSelectedTileId] = useState<string | null>(null);
@@ -29,8 +31,15 @@ export function useGame(options: UseGameOptions) {
   const [error, setError] = useState<string | null>(null);
   const [isProcessingAI, setIsProcessingAI] = useState(false);
 
+  // Rack layout: 30 slots, each contains tile ID or null
+  // This allows players to arrange tiles freely with gaps
+  const [rackLayout, setRackLayout] = useState<(string | null)[]>(() =>
+    Array(RACK_SIZE).fill(null)
+  );
+
   const aiTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const turnTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const prevTileIdsRef = useRef<string[]>([]);
 
   // Initialize game
   const initGame = useCallback(() => {
@@ -56,6 +65,17 @@ export function useGame(options: UseGameOptions) {
     setTimeRemaining(options.turnTimeLimit || 30);
     setSelectedTileId(null);
     setError(null);
+
+    // Initialize rack layout with player's tiles
+    const player = newGame.players.find(p => p.id === options.playerId);
+    if (player) {
+      const newLayout: (string | null)[] = Array(RACK_SIZE).fill(null);
+      player.tiles.forEach((tile, i) => {
+        newLayout[i] = tile.id;
+      });
+      setRackLayout(newLayout);
+      prevTileIdsRef.current = player.tiles.map(t => t.id);
+    }
   }, [options.mode, options.playerName, options.playerId, options.turnTimeLimit]);
 
   // Process AI turn
@@ -152,6 +172,48 @@ export function useGame(options: UseGameOptions) {
     };
   }, [game?.currentTurn, game?.status, options.playerId, options.turnTimeLimit, processAITurn]);
 
+  // Sync rack layout when player's tiles change
+  useEffect(() => {
+    if (!game) return;
+
+    const player = game.players.find(p => p.id === options.playerId);
+    if (!player) return;
+
+    const currentTileIds = player.tiles.map(t => t.id);
+    const prevTileIds = prevTileIdsRef.current;
+
+    // Find new tiles (drawn)
+    const newTileIds = currentTileIds.filter(id => !prevTileIds.includes(id));
+    // Find removed tiles (discarded)
+    const removedTileIds = prevTileIds.filter(id => !currentTileIds.includes(id));
+
+    if (newTileIds.length > 0 || removedTileIds.length > 0) {
+      setRackLayout(prev => {
+        const newLayout = [...prev];
+
+        // Remove discarded tiles from layout
+        removedTileIds.forEach(id => {
+          const idx = newLayout.indexOf(id);
+          if (idx !== -1) {
+            newLayout[idx] = null;
+          }
+        });
+
+        // Add new tiles to first available slots
+        newTileIds.forEach(id => {
+          const emptyIdx = newLayout.findIndex(slot => slot === null);
+          if (emptyIdx !== -1) {
+            newLayout[emptyIdx] = id;
+          }
+        });
+
+        return newLayout;
+      });
+
+      prevTileIdsRef.current = currentTileIds;
+    }
+  }, [game, options.playerId]);
+
   // Player actions
   const handleDrawFromPile = useCallback(() => {
     if (!game) return;
@@ -203,8 +265,79 @@ export function useGame(options: UseGameOptions) {
     setSelectedTileId((prev) => (prev === tile.id ? null : tile.id));
   }, []);
 
+  // Move tile to a new position (drag and drop)
+  // This only affects the visual rack layout, not the game state
+  const handleTileMove = useCallback((fromIndex: number, toIndex: number) => {
+    if (fromIndex === toIndex) return;
+
+    setRackLayout(prev => {
+      const newLayout = [...prev];
+      const tileId = newLayout[fromIndex];
+
+      // If target slot has a tile, swap them
+      if (newLayout[toIndex] !== null) {
+        newLayout[fromIndex] = newLayout[toIndex];
+        newLayout[toIndex] = tileId;
+      } else {
+        // Move to empty slot
+        newLayout[fromIndex] = null;
+        newLayout[toIndex] = tileId;
+      }
+
+      return newLayout;
+    });
+  }, []);
+
+  // Sort tiles by groups (same number, different colors) - 5/5 style
+  const handleSortByGroups = useCallback(() => {
+    if (!game) return;
+
+    const player = game.players.find(p => p.id === options.playerId);
+    if (!player) return;
+
+    // Get current tiles and sort them
+    const tiles = [...player.tiles];
+    tiles.sort((a, b) => {
+      if (a.number !== b.number) return a.number - b.number;
+      const colorOrder = ['red', 'yellow', 'blue', 'black'];
+      return colorOrder.indexOf(a.color) - colorOrder.indexOf(b.color);
+    });
+
+    // Update rack layout with sorted tiles
+    const newLayout: (string | null)[] = Array(RACK_SIZE).fill(null);
+    tiles.forEach((tile, i) => {
+      newLayout[i] = tile.id;
+    });
+    setRackLayout(newLayout);
+  }, [game, options.playerId]);
+
+  // Sort tiles by runs (consecutive numbers, same color) - 1/2/3 style
+  const handleSortByRuns = useCallback(() => {
+    if (!game) return;
+
+    const player = game.players.find(p => p.id === options.playerId);
+    if (!player) return;
+
+    // Get current tiles and sort them
+    const tiles = [...player.tiles];
+    tiles.sort((a, b) => {
+      const colorOrder = ['red', 'yellow', 'blue', 'black'];
+      const colorDiff = colorOrder.indexOf(a.color) - colorOrder.indexOf(b.color);
+      if (colorDiff !== 0) return colorDiff;
+      return a.number - b.number;
+    });
+
+    // Update rack layout with sorted tiles
+    const newLayout: (string | null)[] = Array(RACK_SIZE).fill(null);
+    tiles.forEach((tile, i) => {
+      newLayout[i] = tile.id;
+    });
+    setRackLayout(newLayout);
+  }, [game, options.playerId]);
+
   return {
     game,
+    rackLayout,
     selectedTileId,
     timeRemaining,
     error,
@@ -215,5 +348,8 @@ export function useGame(options: UseGameOptions) {
     handleDiscard,
     handleDeclareWin,
     handleTileSelect,
+    handleTileMove,
+    handleSortByGroups,
+    handleSortByRuns,
   };
 }
