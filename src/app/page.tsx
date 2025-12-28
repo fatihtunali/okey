@@ -7,195 +7,272 @@ export default function Home() {
 
   const t = {
     tr: {
-      title: "OKEY",
-      subtitle: "Hadi Hep Beraber",
-      description: "Türkiye'nin en sevilen taş oyununu online oyna! Arkadaşlarınla veya yapay zeka ile hemen bir oyuna başla.",
-      quickMatch: "Hızlı Oyun",
-      createRoom: "Oda Oluştur",
-      joinRoom: "Odaya Katıl",
-      login: "Giriş Yap",
-      register: "Kayıt Ol",
+      brand: "Hadi Hep Beraber",
+      tagline: "Türkiye'nin Okey Masası",
+      description: "Dostlarınla buluş, rakiplerini yen! Gerçek oyuncularla anında eşleş ve Türkiye'nin en keyifli okey deneyimini yaşa.",
+      quickMatch: "Hemen Oyna",
+      createRoom: "Masa Kur",
+      joinRoom: "Masaya Otur",
+      login: "Giriş",
+      register: "Üye Ol",
+      playersOnline: "oyuncu masada",
       features: {
-        title: "Özellikler",
-        realtime: "Gerçek Zamanlı",
-        realtimeDesc: "Anlık oyun deneyimi",
-        ai: "Yapay Zeka",
-        aiDesc: "Rakip bulunamazsa AI ile oyna",
-        ranking: "Sıralama",
-        rankingDesc: "Liderlik tablosunda yarış",
-        chat: "Sohbet",
-        chatDesc: "Oyun içi mesajlaşma",
+        title: "Neden Biz?",
+        fast: "Anında Eşleşme",
+        fastDesc: "Saniyeler içinde masana otur",
+        players: "Gerçek Rakipler",
+        playersDesc: "Türkiye'nin dört bir yanından oyuncular",
+        ranking: "Usta Ligi",
+        rankingDesc: "Yüksel, kazan, şampiyon ol",
+        chat: "Canlı Sohbet",
+        chatDesc: "Masada muhabbet et",
       },
-      footer: "2025 Hadi Hep Beraber. Tüm hakları saklıdır.",
+      howTo: {
+        title: "Nasıl Oynanır?",
+        step1: "Per ve gruplar oluştur",
+        step2: "Okey taşını akıllıca kullan",
+        step3: "İlk bitiren masayı alır!",
+      },
+      footer: "Hadi Hep Beraber - Türkiye'nin Okey Masası",
     },
     en: {
-      title: "OKEY",
-      subtitle: "Come On, All Together",
-      description: "Play Turkey's most beloved tile game online! Start a game with friends or AI right now.",
-      quickMatch: "Quick Match",
-      createRoom: "Create Room",
-      joinRoom: "Join Room",
+      brand: "Hadi Hep Beraber",
+      tagline: "Turkey's Okey Table",
+      description: "Meet friends, beat opponents! Instantly match with real players and enjoy Turkey's most exciting Okey experience.",
+      quickMatch: "Play Now",
+      createRoom: "Create Table",
+      joinRoom: "Join Table",
       login: "Login",
-      register: "Register",
+      register: "Sign Up",
+      playersOnline: "players at tables",
       features: {
-        title: "Features",
-        realtime: "Real-time",
-        realtimeDesc: "Instant game experience",
-        ai: "AI Players",
-        aiDesc: "Play with AI when no opponents",
-        ranking: "Rankings",
-        rankingDesc: "Compete on leaderboards",
-        chat: "Chat",
-        chatDesc: "In-game messaging",
+        title: "Why Us?",
+        fast: "Instant Matching",
+        fastDesc: "Sit at your table in seconds",
+        players: "Real Opponents",
+        playersDesc: "Players from all across Turkey",
+        ranking: "Master League",
+        rankingDesc: "Rise, win, become champion",
+        chat: "Live Chat",
+        chatDesc: "Chat at the table",
       },
-      footer: "2025 Hadi Hep Beraber. All rights reserved.",
+      howTo: {
+        title: "How to Play?",
+        step1: "Form sets and runs",
+        step2: "Use the Okey tile wisely",
+        step3: "First to finish wins the table!",
+      },
+      footer: "Hadi Hep Beraber - Turkey's Okey Table",
     },
   };
 
   const text = t[lang];
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-emerald-900 via-emerald-800 to-emerald-950">
+    <div className="min-h-screen bg-gradient-to-b from-red-950 via-red-900 to-stone-900">
+      {/* Decorative Pattern Overlay */}
+      <div className="absolute inset-0 opacity-5" style={{
+        backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+      }} />
+
       {/* Header */}
-      <header className="flex items-center justify-between px-6 py-4">
-        <div className="text-2xl font-bold text-white">
-          🎴 {text.title}
+      <header className="relative flex items-center justify-between px-6 py-4">
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-amber-500 text-xl font-bold text-red-950 shadow-lg">
+            ◆
+          </div>
+          <div>
+            <div className="text-xl font-bold text-amber-400">{text.brand}</div>
+            <div className="text-xs text-red-300">{text.tagline}</div>
+          </div>
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
           {/* Language Toggle */}
-          <div className="flex rounded-full bg-white/10 p-1">
+          <div className="flex rounded-lg bg-black/20 p-1">
             <button
               onClick={() => setLang("tr")}
-              className={`rounded-full px-3 py-1 text-sm font-medium transition ${
+              className={`rounded-md px-3 py-1.5 text-sm font-medium transition ${
                 lang === "tr"
-                  ? "bg-white text-emerald-900"
-                  : "text-white hover:bg-white/10"
+                  ? "bg-amber-500 text-red-950"
+                  : "text-amber-200 hover:bg-white/10"
               }`}
             >
-              TR
+              🇹🇷 TR
             </button>
             <button
               onClick={() => setLang("en")}
-              className={`rounded-full px-3 py-1 text-sm font-medium transition ${
+              className={`rounded-md px-3 py-1.5 text-sm font-medium transition ${
                 lang === "en"
-                  ? "bg-white text-emerald-900"
-                  : "text-white hover:bg-white/10"
+                  ? "bg-amber-500 text-red-950"
+                  : "text-amber-200 hover:bg-white/10"
               }`}
             >
-              EN
+              🇬🇧 EN
             </button>
           </div>
           {/* Auth Buttons */}
-          <button className="rounded-full border border-white/30 px-4 py-2 text-sm font-medium text-white transition hover:bg-white/10">
+          <button className="rounded-lg border border-amber-500/30 px-4 py-2 text-sm font-medium text-amber-400 transition hover:bg-amber-500/10">
             {text.login}
           </button>
-          <button className="rounded-full bg-amber-500 px-4 py-2 text-sm font-medium text-white transition hover:bg-amber-600">
+          <button className="rounded-lg bg-amber-500 px-4 py-2 text-sm font-bold text-red-950 shadow-lg transition hover:bg-amber-400">
             {text.register}
           </button>
         </div>
       </header>
 
       {/* Hero Section */}
-      <main className="flex flex-col items-center px-6 py-16 text-center">
+      <main className="relative flex flex-col items-center px-6 py-12 text-center">
         {/* Decorative Tiles */}
-        <div className="mb-8 flex gap-2">
+        <div className="mb-8 flex gap-3">
           {[
-            { num: 7, color: "bg-red-500" },
-            { num: 8, color: "bg-blue-500" },
-            { num: 9, color: "bg-yellow-500" },
-            { num: 10, color: "bg-black" },
+            { num: 1, color: "text-red-600" },
+            { num: 2, color: "text-amber-600" },
+            { num: 3, color: "text-stone-800" },
+            { num: 4, color: "text-blue-600" },
+            { num: "★", color: "text-red-500", isOkey: true },
           ].map((tile, i) => (
             <div
               key={i}
-              className="flex h-16 w-12 items-center justify-center rounded-lg bg-amber-100 shadow-lg transform hover:scale-110 transition"
+              className={`flex h-20 w-14 flex-col items-center justify-center rounded-xl shadow-xl transform hover:scale-110 hover:-rotate-3 transition-all cursor-pointer ${
+                tile.isOkey
+                  ? "bg-gradient-to-b from-amber-400 to-amber-600 ring-2 ring-amber-300"
+                  : "bg-gradient-to-b from-amber-50 to-amber-100"
+              }`}
             >
-              <span className={`text-2xl font-bold ${tile.color.replace("bg-", "text-")}`}>
+              <span className={`text-3xl font-black ${tile.isOkey ? "text-red-950" : tile.color}`}>
                 {tile.num}
               </span>
+              {tile.isOkey && <span className="text-[10px] font-bold text-red-900">OKEY</span>}
             </div>
           ))}
         </div>
 
-        <h1 className="mb-2 text-6xl font-black text-white drop-shadow-lg">
-          {text.title}
+        <h1 className="mb-3 text-5xl font-black text-white drop-shadow-lg md:text-6xl">
+          {text.brand}
         </h1>
-        <h2 className="mb-6 text-2xl font-medium text-amber-400">
-          {text.subtitle}
+        <h2 className="mb-6 text-xl font-medium text-amber-400 md:text-2xl">
+          {text.tagline}
         </h2>
-        <p className="mb-10 max-w-xl text-lg text-emerald-100">
+        <p className="mb-10 max-w-lg text-lg leading-relaxed text-red-100">
           {text.description}
         </p>
 
         {/* Action Buttons */}
         <div className="flex flex-col gap-4 sm:flex-row">
-          <button className="group flex items-center gap-2 rounded-full bg-amber-500 px-8 py-4 text-lg font-bold text-white shadow-lg transition hover:bg-amber-600 hover:scale-105">
-            <span className="text-2xl">▶</span>
+          <button className="group flex items-center justify-center gap-3 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 px-10 py-5 text-xl font-black text-red-950 shadow-2xl transition hover:from-amber-400 hover:to-amber-500 hover:scale-105">
+            <span className="text-2xl transition group-hover:scale-125">▶</span>
             {text.quickMatch}
           </button>
-          <button className="rounded-full border-2 border-white/30 bg-white/10 px-8 py-4 text-lg font-bold text-white backdrop-blur transition hover:bg-white/20">
+          <button className="rounded-xl border-2 border-amber-500/40 bg-black/20 px-8 py-5 text-lg font-bold text-amber-400 backdrop-blur transition hover:bg-amber-500/20 hover:border-amber-400">
             {text.createRoom}
           </button>
-          <button className="rounded-full border-2 border-white/30 bg-white/10 px-8 py-4 text-lg font-bold text-white backdrop-blur transition hover:bg-white/20">
+          <button className="rounded-xl border-2 border-amber-500/40 bg-black/20 px-8 py-5 text-lg font-bold text-amber-400 backdrop-blur transition hover:bg-amber-500/20 hover:border-amber-400">
             {text.joinRoom}
           </button>
         </div>
 
         {/* Online Players Count */}
-        <div className="mt-8 flex items-center gap-2 text-emerald-200">
-          <span className="h-3 w-3 animate-pulse rounded-full bg-green-400"></span>
-          <span>247 {lang === "tr" ? "oyuncu çevrimiçi" : "players online"}</span>
+        <div className="mt-10 flex items-center gap-3 rounded-full bg-black/30 px-6 py-3 backdrop-blur">
+          <span className="relative flex h-3 w-3">
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-400 opacity-75"></span>
+            <span className="relative inline-flex h-3 w-3 rounded-full bg-green-500"></span>
+          </span>
+          <span className="text-lg font-semibold text-amber-200">
+            <span className="text-2xl font-black text-amber-400">1,247</span> {text.playersOnline}
+          </span>
         </div>
       </main>
 
       {/* Features Section */}
-      <section className="px-6 py-16">
-        <h3 className="mb-10 text-center text-3xl font-bold text-white">
+      <section className="relative px-6 py-16">
+        <h3 className="mb-12 text-center text-3xl font-black text-white">
           {text.features.title}
         </h3>
-        <div className="mx-auto grid max-w-4xl grid-cols-2 gap-6 md:grid-cols-4">
+        <div className="mx-auto grid max-w-5xl grid-cols-2 gap-6 md:grid-cols-4">
           {[
-            { icon: "⚡", title: text.features.realtime, desc: text.features.realtimeDesc },
-            { icon: "🤖", title: text.features.ai, desc: text.features.aiDesc },
-            { icon: "🏆", title: text.features.ranking, desc: text.features.rankingDesc },
-            { icon: "💬", title: text.features.chat, desc: text.features.chatDesc },
+            { icon: "⚡", title: text.features.fast, desc: text.features.fastDesc, color: "from-amber-500/20 to-amber-600/10" },
+            { icon: "👥", title: text.features.players, desc: text.features.playersDesc, color: "from-red-500/20 to-red-600/10" },
+            { icon: "🏆", title: text.features.ranking, desc: text.features.rankingDesc, color: "from-amber-500/20 to-amber-600/10" },
+            { icon: "💬", title: text.features.chat, desc: text.features.chatDesc, color: "from-red-500/20 to-red-600/10" },
           ].map((feature, i) => (
             <div
               key={i}
-              className="flex flex-col items-center rounded-2xl bg-white/10 p-6 text-center backdrop-blur transition hover:bg-white/20"
+              className={`flex flex-col items-center rounded-2xl bg-gradient-to-b ${feature.color} border border-amber-500/10 p-6 text-center backdrop-blur transition hover:border-amber-500/30 hover:scale-105`}
             >
-              <span className="mb-3 text-4xl">{feature.icon}</span>
-              <h4 className="mb-1 font-bold text-white">{feature.title}</h4>
-              <p className="text-sm text-emerald-200">{feature.desc}</p>
+              <span className="mb-4 text-5xl">{feature.icon}</span>
+              <h4 className="mb-2 text-lg font-bold text-amber-400">{feature.title}</h4>
+              <p className="text-sm text-red-200">{feature.desc}</p>
             </div>
           ))}
         </div>
       </section>
 
-      {/* Game Preview */}
-      <section className="px-6 py-16">
-        <div className="mx-auto max-w-4xl rounded-3xl bg-emerald-950/50 p-8 backdrop-blur">
-          <div className="flex items-center justify-center gap-4 text-white">
-            <div className="text-center">
-              <div className="mb-2 text-6xl">🎯</div>
-              <p className="text-emerald-200">{lang === "tr" ? "Per ve gruplar oluştur" : "Form sets and runs"}</p>
-            </div>
-            <div className="text-4xl text-emerald-600">→</div>
-            <div className="text-center">
-              <div className="mb-2 text-6xl">🃏</div>
-              <p className="text-emerald-200">{lang === "tr" ? "Joker (Okey) kullan" : "Use the Joker (Okey)"}</p>
-            </div>
-            <div className="text-4xl text-emerald-600">→</div>
-            <div className="text-center">
-              <div className="mb-2 text-6xl">🏅</div>
-              <p className="text-emerald-200">{lang === "tr" ? "İlk bitiren kazanır!" : "First to finish wins!"}</p>
-            </div>
+      {/* How to Play Section */}
+      <section className="relative px-6 py-16">
+        <h3 className="mb-12 text-center text-3xl font-black text-white">
+          {text.howTo.title}
+        </h3>
+        <div className="mx-auto max-w-4xl">
+          <div className="flex flex-col items-center justify-center gap-8 md:flex-row">
+            {[
+              { step: "1", icon: "🎯", text: text.howTo.step1 },
+              { step: "2", icon: "🃏", text: text.howTo.step2 },
+              { step: "3", icon: "🏅", text: text.howTo.step3 },
+            ].map((item, i) => (
+              <div key={i} className="flex items-center gap-4">
+                <div className="flex flex-col items-center">
+                  <div className="mb-3 flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-b from-amber-500 to-amber-600 text-4xl shadow-xl">
+                    {item.icon}
+                  </div>
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-red-800 text-sm font-bold text-amber-400">
+                    {item.step}
+                  </div>
+                  <p className="mt-3 max-w-[150px] text-center text-sm font-medium text-red-100">
+                    {item.text}
+                  </p>
+                </div>
+                {i < 2 && (
+                  <div className="hidden text-4xl text-amber-600/50 md:block">→</div>
+                )}
+              </div>
+            ))}
           </div>
         </div>
       </section>
 
+      {/* CTA Section */}
+      <section className="relative px-6 py-16">
+        <div className="mx-auto max-w-2xl rounded-3xl bg-gradient-to-r from-amber-500/20 to-red-500/20 border border-amber-500/20 p-10 text-center backdrop-blur">
+          <h3 className="mb-4 text-3xl font-black text-white">
+            {lang === "tr" ? "Hazır mısın?" : "Ready?"}
+          </h3>
+          <p className="mb-8 text-lg text-red-200">
+            {lang === "tr"
+              ? "Hemen üye ol, ilk oyununda 1000 chip hediye!"
+              : "Sign up now, get 1000 free chips on your first game!"}
+          </p>
+          <button className="rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 px-12 py-4 text-xl font-black text-red-950 shadow-2xl transition hover:from-amber-400 hover:to-amber-500 hover:scale-105">
+            {text.register}
+          </button>
+        </div>
+      </section>
+
       {/* Footer */}
-      <footer className="border-t border-white/10 px-6 py-8 text-center text-emerald-300">
-        <p>© {text.footer}</p>
+      <footer className="relative border-t border-amber-500/10 px-6 py-8">
+        <div className="mx-auto max-w-6xl flex flex-col md:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-500 text-sm font-bold text-red-950">
+              ◆
+            </div>
+            <span className="text-amber-400 font-bold">{text.brand}</span>
+          </div>
+          <p className="text-sm text-red-300">© 2025 {text.footer}</p>
+          <div className="flex gap-4 text-2xl">
+            <span className="cursor-pointer hover:scale-125 transition">📱</span>
+            <span className="cursor-pointer hover:scale-125 transition">📧</span>
+            <span className="cursor-pointer hover:scale-125 transition">💬</span>
+          </div>
+        </div>
       </footer>
     </div>
   );

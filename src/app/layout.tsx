@@ -13,9 +13,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Okey - Hadi Hep Beraber",
-  description: "Online Okey oyunu - Arkadaşlarınla veya yapay zeka ile oyna!",
-  keywords: ["okey", "online okey", "türk oyunu", "kart oyunu", "multiplayer"],
+  title: "Hadi Hep Beraber - Türkiye'nin Okey Masası",
+  description: "Dostlarınla buluş, rakiplerini yen! Gerçek oyuncularla anında eşleş ve Türkiye'nin en keyifli okey deneyimini yaşa.",
+  keywords: ["okey", "online okey", "türk oyunu", "taş oyunu", "multiplayer", "hadi hep beraber"],
 };
 
 export default function RootLayout({
