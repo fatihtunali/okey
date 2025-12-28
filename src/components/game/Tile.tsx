@@ -18,23 +18,27 @@ interface TileProps {
   className?: string;
 }
 
-// Clean tile colors matching Zynga 101 Okey Plus style
-const colorStyles: Record<string, { text: string; dot: string }> = {
+// Premium glossy tile colors - Zynga inspired
+const colorStyles: Record<string, { text: string; dot: string; glow: string }> = {
   red: {
     text: 'text-red-600',
-    dot: 'bg-red-400',
+    dot: 'bg-red-500',
+    glow: 'shadow-red-200',
   },
   yellow: {
     text: 'text-amber-500',
-    dot: 'bg-amber-400',
+    dot: 'bg-amber-500',
+    glow: 'shadow-amber-200',
   },
   blue: {
     text: 'text-blue-600',
-    dot: 'bg-blue-400',
+    dot: 'bg-blue-500',
+    glow: 'shadow-blue-200',
   },
   black: {
     text: 'text-gray-800',
-    dot: 'bg-gray-500',
+    dot: 'bg-gray-600',
+    glow: 'shadow-gray-200',
   },
 };
 
@@ -88,28 +92,35 @@ export function Tile({
   const colors = colorStyles[tile.color] || colorStyles.black;
   const sizes = sizeClasses[size];
 
-  // Face down tile - clean back design
+  // Face down tile - Premium glossy back
   if (isFaceDown || tile.isFaceDown) {
     return (
       <div
         className={cn(
-          'rounded-lg',
-          'bg-gradient-to-b from-sky-600 to-sky-700',
-          'border-2 border-sky-500',
+          'relative rounded-xl overflow-hidden',
+          'bg-gradient-to-b from-indigo-500 via-indigo-600 to-indigo-700',
+          'border-2 border-indigo-400',
           'flex items-center justify-center',
           'shadow-lg',
           sizes.container,
           className
         )}
       >
-        <div className="w-2/3 h-2/3 rounded-md border-2 border-sky-400/50 bg-sky-500/30 flex items-center justify-center">
-          <span className="text-sky-300/70 font-black text-lg">◆</span>
+        {/* Glossy shine */}
+        <div className="absolute inset-x-0 top-0 h-1/3 bg-gradient-to-b from-white/30 to-transparent pointer-events-none" />
+
+        {/* Inner pattern */}
+        <div className="w-2/3 h-2/3 rounded-lg border-2 border-indigo-300/40 bg-indigo-400/20 flex items-center justify-center backdrop-blur-sm">
+          <span className="text-indigo-200/80 font-black text-xl drop-shadow">◆</span>
         </div>
+
+        {/* Bottom shadow */}
+        <div className="absolute inset-x-1 bottom-0 h-1 bg-gradient-to-t from-indigo-800/50 to-transparent" />
       </div>
     );
   }
 
-  // Joker tile (false joker / sahte okey)
+  // Joker tile (false joker / sahte okey) - Premium style
   if (tile.isJoker) {
     return (
       <div
@@ -119,30 +130,38 @@ export function Tile({
         onDragStart={onDragStart}
         onDragEnd={onDragEnd}
         className={cn(
-          'rounded-lg cursor-pointer select-none',
-          'bg-white',
-          'border-2 border-gray-200',
-          'flex flex-col items-center justify-center gap-1',
-          'shadow-lg hover:shadow-xl',
-          'hover:-translate-y-1 active:translate-y-0',
-          'transition-all duration-150',
-          isSelected && 'ring-3 ring-blue-500 -translate-y-3 scale-110 z-10 shadow-blue-200',
-          isOkeyTile && 'ring-3 ring-green-500 shadow-green-200',
+          'relative rounded-xl cursor-pointer select-none overflow-hidden',
+          'bg-gradient-to-b from-amber-50 via-amber-100 to-amber-200',
+          'border-2 border-amber-300',
+          'flex flex-col items-center justify-center gap-0.5',
+          'shadow-lg hover:shadow-2xl',
+          'hover:-translate-y-1.5 active:translate-y-0',
+          'transition-all duration-200 ease-out',
+          isSelected && 'ring-4 ring-blue-400 -translate-y-4 scale-110 z-20 shadow-blue-300/50 shadow-2xl',
+          isOkeyTile && 'ring-4 ring-emerald-400 shadow-emerald-300/50 shadow-2xl animate-pulse',
           sizes.container,
           className
         )}
       >
-        <span className={cn('text-red-500', sizes.text)}>☆</span>
+        {/* Glossy shine */}
+        <div className="absolute inset-x-0 top-0 h-1/3 bg-gradient-to-b from-white/80 to-transparent pointer-events-none rounded-t-xl" />
+
+        {/* Star icon */}
+        <span className={cn('text-red-500 drop-shadow relative z-10', sizes.text)}>★</span>
+
         {/* Decorative dots */}
-        <div className={cn('flex', sizes.dots)}>
-          <div className={cn('rounded-full bg-red-400', sizes.dot)} />
-          <div className={cn('rounded-full bg-red-400', sizes.dot)} />
+        <div className={cn('flex relative z-10', sizes.dots)}>
+          <div className={cn('rounded-full bg-red-500 shadow-sm', sizes.dot)} />
+          <div className={cn('rounded-full bg-red-500 shadow-sm', sizes.dot)} />
         </div>
+
+        {/* Bottom shadow */}
+        <div className="absolute inset-x-1 bottom-0 h-1 bg-gradient-to-t from-amber-400/50 to-transparent rounded-b-lg" />
       </div>
     );
   }
 
-  // Regular tile - clean Zynga style
+  // Regular tile - Premium glossy style
   return (
     <div
       onClick={onClick}
@@ -151,27 +170,35 @@ export function Tile({
       onDragStart={onDragStart}
       onDragEnd={onDragEnd}
       className={cn(
-        'rounded-lg cursor-pointer select-none',
-        'bg-white',
+        'relative rounded-xl cursor-pointer select-none overflow-hidden',
+        'bg-gradient-to-b from-white via-gray-50 to-gray-100',
         'border-2 border-gray-200',
-        'flex flex-col items-center justify-center gap-1',
-        'shadow-lg hover:shadow-xl',
-        'hover:-translate-y-1 active:translate-y-0',
-        'transition-all duration-150',
-        isSelected && 'ring-3 ring-blue-500 -translate-y-3 scale-110 z-10 shadow-blue-200',
-        isOkeyTile && 'ring-3 ring-green-500 shadow-green-200',
+        'flex flex-col items-center justify-center gap-0.5',
+        'shadow-lg hover:shadow-2xl',
+        'hover:-translate-y-1.5 active:translate-y-0',
+        'transition-all duration-200 ease-out',
+        isSelected && 'ring-4 ring-blue-400 -translate-y-4 scale-110 z-20 shadow-blue-300/50 shadow-2xl',
+        isOkeyTile && 'ring-4 ring-emerald-400 shadow-emerald-300/50 shadow-2xl animate-pulse',
         sizes.container,
         className
       )}
     >
-      <span className={cn(colors.text, sizes.text)}>
+      {/* Glossy shine effect */}
+      <div className="absolute inset-x-0 top-0 h-1/3 bg-gradient-to-b from-white/80 to-transparent pointer-events-none rounded-t-xl" />
+
+      {/* Number */}
+      <span className={cn(colors.text, sizes.text, 'drop-shadow-sm relative z-10')}>
         {tile.number}
       </span>
-      {/* Decorative dots below number */}
-      <div className={cn('flex', sizes.dots)}>
-        <div className={cn('rounded-full', colors.dot, sizes.dot)} />
-        <div className={cn('rounded-full', colors.dot, sizes.dot)} />
+
+      {/* Decorative dots */}
+      <div className={cn('flex relative z-10', sizes.dots)}>
+        <div className={cn('rounded-full shadow-sm', colors.dot, sizes.dot)} />
+        <div className={cn('rounded-full shadow-sm', colors.dot, sizes.dot)} />
       </div>
+
+      {/* Bottom shadow for 3D effect */}
+      <div className="absolute inset-x-1 bottom-0 h-1 bg-gradient-to-t from-gray-300/50 to-transparent rounded-b-lg" />
     </div>
   );
 }

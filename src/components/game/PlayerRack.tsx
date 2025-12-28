@@ -1,129 +1,199 @@
 'use client';
 
+import { useState } from 'react';
 import { Tile as TileType } from '@/lib/game/types';
 import { Tile, TileSlot } from './Tile';
 import { cn } from '@/lib/utils';
 
 interface PlayerRackProps {
-  tiles: TileType[];
+  tiles: (TileType | null)[];  // Now supports null for empty slots
   okeyTile?: TileType | null;
   selectedTileId?: string | null;
   onTileSelect?: (tile: TileType) => void;
+  onTileMove?: (fromIndex: number, toIndex: number) => void;
   onSortByGroups?: () => void;
   onSortByRuns?: () => void;
   isCurrentPlayer?: boolean;
   canInteract?: boolean;
-  showSlots?: boolean;
   className?: string;
 }
+
+// Fixed rack size: 15 slots per row (total 30 slots for up to 15 tiles with gaps)
+const SLOTS_PER_ROW = 15;
 
 export function PlayerRack({
   tiles,
   okeyTile,
   selectedTileId,
   onTileSelect,
+  onTileMove,
   onSortByGroups,
   onSortByRuns,
   isCurrentPlayer = false,
   canInteract = true,
-  showSlots = false,
   className,
 }: PlayerRackProps) {
-  // Split tiles into two rows like a real okey rack
-  const topRow = tiles.slice(0, Math.ceil(tiles.length / 2));
-  const bottomRow = tiles.slice(Math.ceil(tiles.length / 2));
+  const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+
+  // Create a fixed-size array with tiles and empty slots
+  const rackSlots: (TileType | null)[] = Array(SLOTS_PER_ROW * 2).fill(null);
+
+  // Place tiles in slots (spread them out initially)
+  tiles.forEach((tile, i) => {
+    if (tile) {
+      rackSlots[i] = tile;
+    }
+  });
+
+  // Split into two rows
+  const topRow = rackSlots.slice(0, SLOTS_PER_ROW);
+  const bottomRow = rackSlots.slice(SLOTS_PER_ROW);
+
+  const handleDragStart = (index: number) => {
+    setDraggedIndex(index);
+  };
+
+  const handleDragOver = (e: React.DragEvent, index: number) => {
+    e.preventDefault();
+    setDragOverIndex(index);
+  };
+
+  const handleDrop = (e: React.DragEvent, toIndex: number) => {
+    e.preventDefault();
+    if (draggedIndex !== null && draggedIndex !== toIndex && onTileMove) {
+      onTileMove(draggedIndex, toIndex);
+    }
+    setDraggedIndex(null);
+    setDragOverIndex(null);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedIndex(null);
+    setDragOverIndex(null);
+  };
+
+  const renderSlot = (tile: TileType | null, index: number, rowOffset: number) => {
+    const absoluteIndex = rowOffset + index;
+    const isBeingDragged = draggedIndex === absoluteIndex;
+    const isDragOver = dragOverIndex === absoluteIndex;
+
+    if (tile) {
+      return (
+        <div
+          key={`slot-${absoluteIndex}`}
+          draggable={canInteract}
+          onDragStart={() => handleDragStart(absoluteIndex)}
+          onDragOver={(e) => handleDragOver(e, absoluteIndex)}
+          onDrop={(e) => handleDrop(e, absoluteIndex)}
+          onDragEnd={handleDragEnd}
+          className={cn(
+            'transition-all duration-150',
+            isBeingDragged && 'opacity-50 scale-95',
+            isDragOver && 'scale-110'
+          )}
+        >
+          <Tile
+            tile={tile}
+            okeyTile={okeyTile}
+            isSelected={selectedTileId === tile.id}
+            onClick={() => canInteract && onTileSelect?.(tile)}
+            size="lg"
+          />
+        </div>
+      );
+    }
+
+    // Empty slot
+    return (
+      <div
+        key={`empty-${absoluteIndex}`}
+        onDragOver={(e) => handleDragOver(e, absoluteIndex)}
+        onDrop={(e) => handleDrop(e, absoluteIndex)}
+        className={cn(
+          'w-14 h-[72px] rounded-lg',
+          'bg-amber-900/30',
+          'border border-amber-700/30',
+          'transition-all duration-150',
+          isDragOver && 'bg-amber-600/50 border-amber-400 scale-105'
+        )}
+      />
+    );
+  };
 
   return (
-    <div className={cn('flex items-center gap-2', className)}>
-      {/* Left Sort Button - Groups (same number) */}
+    <div className={cn('flex items-center gap-3', className)}>
+      {/* Left Sort Button - Book style like Zynga */}
       <button
         onClick={onSortByGroups}
         className={cn(
           'flex flex-col items-center justify-center',
-          'w-16 h-24 rounded-xl',
-          'bg-gradient-to-b from-sky-500 to-sky-600',
-          'border-2 border-sky-400',
+          'w-14 h-28 rounded-lg',
+          'bg-gradient-to-b from-stone-700 via-stone-800 to-stone-900',
+          'border-2 border-stone-600',
           'text-white font-bold',
-          'shadow-lg hover:shadow-xl',
-          'hover:from-sky-400 hover:to-sky-500',
+          'shadow-xl',
+          'hover:from-stone-600 hover:to-stone-800',
           'active:scale-95 transition-all',
           'cursor-pointer'
         )}
       >
-        <span className="text-2xl">5/5</span>
-        <span className="text-xs">SIRALA</span>
+        <span className="text-xl font-black">5/5</span>
+        <span className="text-[10px] font-bold mt-1 text-stone-300">SORT</span>
       </button>
 
-      {/* Tile Rack */}
+      {/* Tile Rack - Brown wooden style */}
       <div
         className={cn(
-          // Wooden rack appearance - Zynga style
-          'relative rounded-xl',
-          'bg-gradient-to-b from-amber-600 to-amber-700',
-          'border-4 border-amber-500',
+          'relative rounded-xl overflow-hidden',
+          'bg-gradient-to-b from-amber-700 via-amber-800 to-amber-900',
+          'border-4 border-amber-600',
           'shadow-2xl',
-          'p-3',
-          // Current player highlight
-          isCurrentPlayer && 'ring-4 ring-green-500/70'
+          'p-2',
+          isCurrentPlayer && 'ring-4 ring-green-400/70 ring-offset-2 ring-offset-emerald-950'
         )}
       >
-        {/* Inner surface */}
-        <div className="relative bg-amber-800/50 rounded-lg p-2 space-y-1">
+        {/* Wood grain texture */}
+        <div className="absolute inset-0 opacity-20 pointer-events-none"
+          style={{
+            backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`,
+          }}
+        />
+
+        {/* Inner surface with slots */}
+        <div className="relative bg-amber-950/40 rounded-lg p-2 space-y-1">
           {/* Top row */}
-          <div className="relative flex gap-1 justify-center min-h-[76px] items-end">
-            {topRow.map((tile) => (
-              <Tile
-                key={tile.id}
-                tile={tile}
-                okeyTile={okeyTile}
-                isSelected={selectedTileId === tile.id}
-                onClick={() => canInteract && onTileSelect?.(tile)}
-                size="lg"
-              />
-            ))}
-            {/* Show empty slots if less than 8 tiles and showSlots is true */}
-            {showSlots && Array.from({ length: Math.max(0, 8 - topRow.length) }).map((_, i) => (
-              <TileSlot key={`top-slot-${i}`} size="lg" />
-            ))}
+          <div className="flex gap-0.5 justify-start min-h-[76px] items-end">
+            {topRow.map((tile, i) => renderSlot(tile, i, 0))}
           </div>
 
+          {/* Divider line */}
+          <div className="h-px bg-amber-700/50 mx-2" />
+
           {/* Bottom row */}
-          <div className="relative flex gap-1 justify-center min-h-[76px] items-start">
-            {bottomRow.map((tile) => (
-              <Tile
-                key={tile.id}
-                tile={tile}
-                okeyTile={okeyTile}
-                isSelected={selectedTileId === tile.id}
-                onClick={() => canInteract && onTileSelect?.(tile)}
-                size="lg"
-              />
-            ))}
-            {/* Show empty slots if less than 8 tiles and showSlots is true */}
-            {showSlots && Array.from({ length: Math.max(0, 8 - bottomRow.length) }).map((_, i) => (
-              <TileSlot key={`bottom-slot-${i}`} size="lg" />
-            ))}
+          <div className="flex gap-0.5 justify-start min-h-[76px] items-start">
+            {bottomRow.map((tile, i) => renderSlot(tile, i, SLOTS_PER_ROW))}
           </div>
         </div>
       </div>
 
-      {/* Right Sort Button - Runs (consecutive numbers) */}
+      {/* Right Sort Button - Book style */}
       <button
         onClick={onSortByRuns}
         className={cn(
           'flex flex-col items-center justify-center',
-          'w-16 h-24 rounded-xl',
-          'bg-gradient-to-b from-sky-500 to-sky-600',
-          'border-2 border-sky-400',
+          'w-14 h-28 rounded-lg',
+          'bg-gradient-to-b from-stone-700 via-stone-800 to-stone-900',
+          'border-2 border-stone-600',
           'text-white font-bold',
-          'shadow-lg hover:shadow-xl',
-          'hover:from-sky-400 hover:to-sky-500',
+          'shadow-xl',
+          'hover:from-stone-600 hover:to-stone-800',
           'active:scale-95 transition-all',
           'cursor-pointer'
         )}
       >
-        <span className="text-lg">1/2/3</span>
-        <span className="text-xs">SIRALA</span>
+        <span className="text-sm font-black">1/2/3</span>
+        <span className="text-[10px] font-bold mt-1 text-stone-300">SORT</span>
       </button>
     </div>
   );

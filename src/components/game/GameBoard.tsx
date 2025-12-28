@@ -60,13 +60,15 @@ export function GameBoard({
   const canDiscard = isMyTurn && game.turnPhase === 'discard' && selectedTileId;
 
   return (
-    <div className="relative w-full min-h-[750px] flex flex-col bg-gradient-to-b from-sky-900 via-sky-800 to-sky-900">
-      {/* Timer bar at top */}
-      <div className="h-2 bg-gray-800">
+    <div className="relative w-full min-h-[750px] flex flex-col bg-gradient-to-b from-emerald-950 via-emerald-900 to-emerald-950">
+      {/* Timer bar at top - Zynga style */}
+      <div className="h-3 bg-gray-900 border-b border-gray-700">
         <div
           className={cn(
-            'h-full transition-all duration-1000',
-            timeRemaining > 10 ? 'bg-green-500' : 'bg-red-500 animate-pulse'
+            'h-full transition-all duration-1000 rounded-r-full',
+            timeRemaining > 10
+              ? 'bg-gradient-to-r from-green-400 to-green-500 shadow-lg shadow-green-500/50'
+              : 'bg-gradient-to-r from-red-400 to-red-500 shadow-lg shadow-red-500/50 animate-pulse'
           )}
           style={{ width: `${(timeRemaining / 30) * 100}%` }}
         />
@@ -114,21 +116,28 @@ export function GameBoard({
           })}
         </div>
 
-        {/* Center game area - the table (Zynga style) */}
+        {/* Center game area - Green felt table (Zynga style) */}
         <div className="relative">
-          {/* Dark table surface */}
+          {/* Green felt table surface */}
           <div className={cn(
-            'relative rounded-3xl p-8',
-            'bg-gradient-to-b from-gray-700 to-gray-800',
-            'border-4 border-gray-600',
-            'shadow-2xl',
-            'min-w-[500px]'
+            'relative rounded-2xl p-8',
+            'bg-gradient-to-b from-green-800 via-green-900 to-green-950',
+            'border-4 border-green-700',
+            'shadow-2xl shadow-black/50',
+            'min-w-[520px]'
           )}>
-            {/* Inner border */}
-            <div className="absolute inset-2 rounded-2xl border-2 border-gray-500/30 pointer-events-none" />
+            {/* Felt texture overlay */}
+            <div className="absolute inset-0 rounded-xl opacity-30 pointer-events-none"
+              style={{
+                backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`,
+              }}
+            />
+
+            {/* Inner glow border */}
+            <div className="absolute inset-2 rounded-xl border border-green-600/30 pointer-events-none" />
 
             {/* Table items */}
-            <div className="relative flex items-start justify-center gap-8 py-4">
+            <div className="relative flex items-start justify-center gap-10 py-4">
               {/* Draw pile */}
               <TileStack
                 count={game.tileBag.length}
@@ -157,7 +166,7 @@ export function GameBoard({
             {/* Draw hint */}
             {canDraw && (
               <div className="absolute -bottom-5 left-1/2 -translate-x-1/2 whitespace-nowrap z-10">
-                <div className="bg-green-500 text-white px-6 py-2 rounded-full text-sm font-bold shadow-lg animate-bounce">
+                <div className="bg-gradient-to-r from-amber-400 to-amber-500 text-amber-950 px-6 py-2 rounded-full text-sm font-black shadow-xl animate-bounce border-2 border-amber-300">
                   Taş Çekin!
                 </div>
               </div>
@@ -187,16 +196,16 @@ export function GameBoard({
       </div>
 
       {/* Bottom - Current player area */}
-      <div className="py-4 space-y-4 bg-gradient-to-t from-gray-900 to-transparent">
+      <div className="py-4 space-y-3">
         {/* Action buttons */}
         <div className="flex justify-center gap-4">
           {canDiscard && (
             <button
               onClick={onDiscard}
               className={cn(
-                'px-10 py-3 rounded-xl font-bold text-lg shadow-xl',
-                'bg-gradient-to-b from-red-500 to-red-600',
-                'hover:from-red-400 hover:to-red-500',
+                'px-10 py-3 rounded-xl font-black text-lg shadow-xl',
+                'bg-gradient-to-b from-red-500 to-red-700',
+                'hover:from-red-400 hover:to-red-600',
                 'text-white border-2 border-red-400',
                 'transition-all hover:scale-105 active:scale-95'
               )}
@@ -208,10 +217,10 @@ export function GameBoard({
             <button
               onClick={onDeclareWin}
               className={cn(
-                'px-10 py-3 rounded-xl font-bold text-lg shadow-xl',
-                'bg-gradient-to-b from-green-500 to-green-600',
-                'hover:from-green-400 hover:to-green-500',
-                'text-white border-2 border-green-400',
+                'px-10 py-3 rounded-xl font-black text-lg shadow-xl',
+                'bg-gradient-to-b from-emerald-500 to-emerald-700',
+                'hover:from-emerald-400 hover:to-emerald-600',
+                'text-white border-2 border-emerald-400',
                 'transition-all hover:scale-105 active:scale-95',
                 'animate-pulse'
               )}
@@ -223,7 +232,7 @@ export function GameBoard({
 
         {/* Player rack with sort buttons */}
         {currentPlayer && (
-          <div className="flex justify-center">
+          <div className="flex justify-center overflow-x-auto pb-2">
             <PlayerRack
               tiles={currentPlayer.tiles}
               okeyTile={game.okeyTile}
@@ -240,20 +249,20 @@ export function GameBoard({
         {/* Player info bar */}
         {currentPlayer && (
           <div className="flex justify-center">
-            <div className="flex items-center gap-4 bg-gray-800 rounded-xl px-6 py-3 shadow-xl border-2 border-gray-700">
-              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white font-bold text-xl border-2 border-blue-300">
+            <div className="flex items-center gap-4 bg-gradient-to-r from-gray-800 to-gray-900 rounded-xl px-6 py-3 shadow-xl border border-gray-700">
+              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center text-white font-bold text-xl border-2 border-amber-300 shadow-lg">
                 {currentPlayer.name.charAt(0)}
               </div>
               <div>
                 <div className="text-white font-bold text-lg">{currentPlayer.name}</div>
                 <div className={cn(
-                  'text-sm font-medium',
-                  isMyTurn ? 'text-green-400' : 'text-gray-400'
+                  'text-sm font-bold',
+                  isMyTurn ? 'text-green-400' : 'text-gray-500'
                 )}>
                   {isMyTurn ? 'Senin sıran!' : 'Bekle...'}
                 </div>
               </div>
-              <div className="bg-gray-700 text-white text-lg font-bold px-4 py-2 rounded-lg">
+              <div className="bg-gray-700/80 text-amber-400 text-lg font-black px-4 py-2 rounded-lg border border-gray-600">
                 {currentPlayer.tiles.length} taş
               </div>
             </div>
