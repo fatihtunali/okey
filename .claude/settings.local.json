@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install:*)",
+      "Bash(ssh root@142.93.136.228 \"find /etc/postgresql -name ''*.conf'' 2>/dev/null; ls -la /etc/postgresql/\")",
+      "Bash(scp:*)",
+      "Bash(ssh root@142.93.136.228 \"\ncd /var/www/okey\nls -la .env\ncat .env | head -15\n\")",
+      "Bash(ssh:*)",
+      "Bash(gh repo edit:*)",
+      "Bash(curl:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
+    ]
+  }
+}
