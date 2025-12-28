@@ -9,52 +9,65 @@ interface TileProps {
   okeyTile?: TileType | null;
   isSelected?: boolean;
   isFaceDown?: boolean;
-  size?: 'sm' | 'md' | 'lg' | 'xl';
+  size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl';
   onClick?: () => void;
+  onDoubleClick?: () => void;
   draggable?: boolean;
+  onDragStart?: (e: React.DragEvent) => void;
+  onDragEnd?: (e: React.DragEvent) => void;
   className?: string;
 }
 
-// Realistic tile colors matching traditional okey tiles
-const colorStyles: Record<string, { text: string; glow: string }> = {
+// Clean tile colors matching Zynga 101 Okey Plus style
+const colorStyles: Record<string, { text: string; dot: string }> = {
   red: {
     text: 'text-red-600',
-    glow: 'shadow-red-200',
+    dot: 'bg-red-400',
   },
   yellow: {
     text: 'text-amber-500',
-    glow: 'shadow-amber-200',
+    dot: 'bg-amber-400',
   },
   blue: {
     text: 'text-blue-600',
-    glow: 'shadow-blue-200',
+    dot: 'bg-blue-400',
   },
   black: {
     text: 'text-gray-800',
-    glow: 'shadow-gray-200',
+    dot: 'bg-gray-500',
   },
 };
 
 const sizeClasses = {
+  xs: {
+    container: 'w-8 h-11',
+    text: 'text-lg font-black',
+    dots: 'gap-0.5',
+    dot: 'w-1 h-1',
+  },
   sm: {
     container: 'w-10 h-14',
-    text: 'text-xl',
-    subtext: 'text-[8px]',
+    text: 'text-xl font-black',
+    dots: 'gap-0.5',
+    dot: 'w-1 h-1',
   },
   md: {
     container: 'w-12 h-16',
-    text: 'text-2xl',
-    subtext: 'text-[9px]',
+    text: 'text-2xl font-black',
+    dots: 'gap-1',
+    dot: 'w-1.5 h-1.5',
   },
   lg: {
-    container: 'w-14 h-20',
-    text: 'text-3xl',
-    subtext: 'text-[10px]',
+    container: 'w-14 h-[72px]',
+    text: 'text-3xl font-black',
+    dots: 'gap-1',
+    dot: 'w-1.5 h-1.5',
   },
   xl: {
-    container: 'w-16 h-24',
-    text: 'text-4xl',
-    subtext: 'text-xs',
+    container: 'w-16 h-20',
+    text: 'text-4xl font-black',
+    dots: 'gap-1',
+    dot: 'w-2 h-2',
   },
 };
 
@@ -65,112 +78,127 @@ export function Tile({
   isFaceDown = false,
   size = 'lg',
   onClick,
+  onDoubleClick,
   draggable = false,
+  onDragStart,
+  onDragEnd,
   className,
 }: TileProps) {
   const isOkeyTile = okeyTile && isOkey(tile, okeyTile);
   const colors = colorStyles[tile.color] || colorStyles.black;
   const sizes = sizeClasses[size];
 
-  // Face down tile - realistic wooden back
+  // Face down tile - clean back design
   if (isFaceDown || tile.isFaceDown) {
     return (
       <div
         className={cn(
-          'rounded-xl border-2 border-amber-800/50',
-          'bg-gradient-to-br from-amber-700 via-amber-800 to-amber-900',
+          'rounded-lg',
+          'bg-gradient-to-b from-sky-600 to-sky-700',
+          'border-2 border-sky-500',
           'flex items-center justify-center',
-          'shadow-lg shadow-black/30',
-          'transition-all duration-200',
+          'shadow-lg',
           sizes.container,
           className
         )}
       >
-        {/* Decorative pattern on back */}
-        <div className="w-4/5 h-4/5 rounded-lg border border-amber-600/30 bg-gradient-to-br from-amber-600/20 to-transparent flex items-center justify-center">
-          <div className="w-2/3 h-2/3 rounded border border-amber-500/20 flex items-center justify-center">
-            <span className="text-amber-500/50 font-bold text-xs">◆</span>
-          </div>
+        <div className="w-2/3 h-2/3 rounded-md border-2 border-sky-400/50 bg-sky-500/30 flex items-center justify-center">
+          <span className="text-sky-300/70 font-black text-lg">◆</span>
         </div>
       </div>
     );
   }
 
-  // Joker tile - golden special tile
+  // Joker tile (false joker / sahte okey)
   if (tile.isJoker) {
     return (
       <div
         onClick={onClick}
+        onDoubleClick={onDoubleClick}
+        draggable={draggable}
+        onDragStart={onDragStart}
+        onDragEnd={onDragEnd}
         className={cn(
-          'rounded-xl cursor-pointer',
-          'bg-gradient-to-b from-amber-100 via-amber-50 to-amber-100',
-          'border-2 border-amber-300',
-          'flex flex-col items-center justify-center gap-0.5',
-          'shadow-lg shadow-amber-200/50',
-          'hover:shadow-xl hover:-translate-y-1 hover:scale-105',
-          'active:translate-y-0 active:scale-100',
+          'rounded-lg cursor-pointer select-none',
+          'bg-white',
+          'border-2 border-gray-200',
+          'flex flex-col items-center justify-center gap-1',
+          'shadow-lg hover:shadow-xl',
+          'hover:-translate-y-1 active:translate-y-0',
           'transition-all duration-150',
-          isSelected && 'ring-4 ring-blue-400 -translate-y-3 scale-105',
-          isOkeyTile && 'ring-4 ring-green-400',
+          isSelected && 'ring-3 ring-blue-500 -translate-y-3 scale-110 z-10 shadow-blue-200',
+          isOkeyTile && 'ring-3 ring-green-500 shadow-green-200',
           sizes.container,
           className
         )}
-        draggable={draggable}
       >
-        <span className="text-amber-600 drop-shadow-sm" style={{ fontSize: 'inherit' }}>
-          <span className={sizes.text}>★</span>
-        </span>
-        <span className={cn('text-amber-700 font-bold tracking-tight', sizes.subtext)}>OKEY</span>
+        <span className={cn('text-red-500', sizes.text)}>☆</span>
+        {/* Decorative dots */}
+        <div className={cn('flex', sizes.dots)}>
+          <div className={cn('rounded-full bg-red-400', sizes.dot)} />
+          <div className={cn('rounded-full bg-red-400', sizes.dot)} />
+        </div>
       </div>
     );
   }
 
-  // Regular tile - realistic cream-colored with colored number
+  // Regular tile - clean Zynga style
   return (
     <div
       onClick={onClick}
+      onDoubleClick={onDoubleClick}
+      draggable={draggable}
+      onDragStart={onDragStart}
+      onDragEnd={onDragEnd}
       className={cn(
-        'rounded-xl cursor-pointer',
-        // Realistic tile texture
-        'bg-gradient-to-b from-amber-50 via-stone-50 to-amber-100',
-        'border-2 border-stone-200',
-        // 3D effect
-        'shadow-lg shadow-black/20',
-        'flex flex-col items-center justify-center',
-        // Hover effects
-        'hover:shadow-xl hover:-translate-y-1.5 hover:scale-105',
-        'active:translate-y-0 active:scale-100',
+        'rounded-lg cursor-pointer select-none',
+        'bg-white',
+        'border-2 border-gray-200',
+        'flex flex-col items-center justify-center gap-1',
+        'shadow-lg hover:shadow-xl',
+        'hover:-translate-y-1 active:translate-y-0',
         'transition-all duration-150',
-        // Selection states
-        isSelected && 'ring-4 ring-blue-400 -translate-y-4 scale-110 z-10',
-        isOkeyTile && 'ring-4 ring-green-400 animate-pulse',
+        isSelected && 'ring-3 ring-blue-500 -translate-y-3 scale-110 z-10 shadow-blue-200',
+        isOkeyTile && 'ring-3 ring-green-500 shadow-green-200',
         sizes.container,
         className
       )}
-      draggable={draggable}
     >
-      {/* Number */}
-      <span className={cn('font-black drop-shadow-sm', colors.text, sizes.text)}>
+      <span className={cn(colors.text, sizes.text)}>
         {tile.number}
       </span>
-
-      {/* Okey indicator */}
-      {isOkeyTile && (
-        <span className={cn('font-bold text-green-600 tracking-tight', sizes.subtext)}>OKEY</span>
-      )}
+      {/* Decorative dots below number */}
+      <div className={cn('flex', sizes.dots)}>
+        <div className={cn('rounded-full', colors.dot, sizes.dot)} />
+        <div className={cn('rounded-full', colors.dot, sizes.dot)} />
+      </div>
     </div>
   );
 }
 
-// Empty tile slot for rack
-export function TileSlot({ size = 'lg', className }: { size?: 'sm' | 'md' | 'lg' | 'xl'; className?: string }) {
+// Empty slot for rack
+export function TileSlot({
+  size = 'lg',
+  onDrop,
+  onDragOver,
+  isHighlighted = false,
+  className
+}: {
+  size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl';
+  onDrop?: (e: React.DragEvent) => void;
+  onDragOver?: (e: React.DragEvent) => void;
+  isHighlighted?: boolean;
+  className?: string;
+}) {
   const sizes = sizeClasses[size];
 
   return (
     <div
+      onDrop={onDrop}
+      onDragOver={onDragOver}
       className={cn(
-        'rounded-xl border-2 border-dashed border-amber-600/30',
-        'bg-amber-900/20',
+        'rounded-lg border-2 border-dashed',
+        isHighlighted ? 'border-blue-400 bg-blue-100/30' : 'border-gray-400/30 bg-gray-500/10',
         sizes.container,
         className
       )}
@@ -178,71 +206,95 @@ export function TileSlot({ size = 'lg', className }: { size?: 'sm' | 'md' | 'lg'
   );
 }
 
-// Tile stack for draw pile - realistic stack with depth
+// Tile Stack - clean design matching Zynga style
+interface TileStackProps {
+  count: number;
+  size?: 'sm' | 'md' | 'lg';
+  onClick?: () => void;
+  canClick?: boolean;
+  className?: string;
+}
+
 export function TileStack({
   count,
   size = 'lg',
   onClick,
   canClick = false,
-  className
-}: {
-  count: number;
-  size?: 'sm' | 'md' | 'lg' | 'xl';
-  onClick?: () => void;
-  canClick?: boolean;
-  className?: string;
-}) {
-  const sizes = sizeClasses[size];
+  className,
+}: TileStackProps) {
+  const stackSizes = {
+    sm: { w: 'w-10', h: 'h-14', offset: 2 },
+    md: { w: 'w-12', h: 'h-16', offset: 2.5 },
+    lg: { w: 'w-14', h: 'h-[72px]', offset: 3 },
+  };
+
+  const s = stackSizes[size];
+  const visibleLayers = Math.min(5, Math.ceil(count / 20));
 
   return (
     <div
       className={cn(
-        'relative',
-        canClick && 'cursor-pointer hover:scale-105 transition-transform',
+        'relative flex flex-col items-center',
+        canClick && 'cursor-pointer group',
         className
       )}
       onClick={canClick ? onClick : undefined}
     >
-      {/* Stack layers for depth effect */}
-      <div className={cn(
-        'absolute top-2 left-1 rounded-xl bg-amber-950 border border-amber-900',
-        sizes.container
-      )} />
-      <div className={cn(
-        'absolute top-1.5 left-0.5 rounded-xl bg-amber-900 border border-amber-800',
-        sizes.container
-      )} />
-      <div className={cn(
-        'absolute top-1 left-0 rounded-xl bg-amber-800 border border-amber-700',
-        sizes.container
-      )} />
-
-      {/* Top tile */}
-      <div className={cn(
-        'relative rounded-xl',
-        'bg-gradient-to-br from-amber-700 via-amber-800 to-amber-900',
-        'border-2 border-amber-700',
-        'flex items-center justify-center',
-        'shadow-xl shadow-black/40',
-        sizes.container
-      )}>
-        {/* Decorative center pattern */}
-        <div className="w-4/5 h-4/5 rounded-lg border border-amber-600/30 bg-gradient-to-br from-amber-600/20 to-transparent flex items-center justify-center">
-          <div className="w-2/3 h-2/3 rounded border border-amber-500/20 flex items-center justify-center">
-            <span className="text-amber-500/60 font-bold">◆</span>
+      {/* Stacked tiles visual */}
+      <div className="relative" style={{ marginBottom: visibleLayers * 3 }}>
+        {Array.from({ length: visibleLayers }).map((_, i) => (
+          <div
+            key={i}
+            className={cn(
+              'absolute rounded-lg',
+              'bg-gradient-to-b from-sky-500 to-sky-600',
+              'border-2 border-sky-400',
+              'shadow-md',
+              s.w, s.h,
+              canClick && i === visibleLayers - 1 && 'group-hover:-translate-y-1 group-hover:shadow-xl transition-all'
+            )}
+            style={{
+              top: -i * s.offset,
+              left: i * 1,
+              zIndex: i,
+            }}
+          >
+            <div className="w-full h-full flex items-center justify-center">
+              <div className="w-2/3 h-2/3 rounded-md border-2 border-sky-300/50 bg-sky-400/30 flex items-center justify-center">
+                <span className="text-sky-200/70 font-black">◆</span>
+              </div>
+            </div>
+          </div>
+        ))}
+        {/* Top interactive tile */}
+        <div
+          className={cn(
+            'relative rounded-lg',
+            'bg-gradient-to-b from-sky-500 to-sky-600',
+            'border-2 border-sky-400',
+            'shadow-lg',
+            s.w, s.h,
+            canClick && 'group-hover:-translate-y-2 group-hover:shadow-xl transition-all'
+          )}
+          style={{ zIndex: visibleLayers }}
+        >
+          <div className="w-full h-full flex items-center justify-center">
+            <div className="w-2/3 h-2/3 rounded-md border-2 border-sky-300/50 bg-sky-400/30 flex items-center justify-center">
+              <span className="text-sky-200 font-black text-xl">◆</span>
+            </div>
           </div>
         </div>
       </div>
 
       {/* Count badge */}
-      <div className="absolute -top-2 -right-2 bg-red-600 text-white text-xs font-bold rounded-full min-w-[24px] h-6 px-1.5 flex items-center justify-center shadow-lg border-2 border-red-500">
+      <div className="mt-2 bg-gray-800 text-white text-sm font-bold px-3 py-1 rounded-full shadow">
         {count}
       </div>
     </div>
   );
 }
 
-// Indicator tile display - special showcase for the okey indicator
+// Indicator tile on stand - shows which tile is the okey
 export function IndicatorTile({
   tile,
   okeyTile,
@@ -253,44 +305,55 @@ export function IndicatorTile({
   className?: string;
 }) {
   const colors = colorStyles[tile.color] || colorStyles.black;
+  const okeyColors = colorStyles[okeyTile.color] || colorStyles.black;
 
   return (
-    <div className={cn('relative', className)}>
-      {/* Elevated platform */}
-      <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-20 h-3 bg-amber-900 rounded-full shadow-lg" />
-
-      {/* Tile */}
-      <div className={cn(
-        'relative w-14 h-20 rounded-xl',
-        'bg-gradient-to-b from-amber-50 via-stone-50 to-amber-100',
-        'border-2 border-stone-300',
-        'shadow-xl shadow-black/30',
-        'flex flex-col items-center justify-center',
-        'ring-2 ring-amber-400/50'
-      )}>
-        <span className={cn('font-black text-3xl drop-shadow-sm', colors.text)}>
-          {tile.number}
-        </span>
+    <div className={cn('flex flex-col items-center', className)}>
+      {/* Indicator label */}
+      <div className="bg-amber-500 text-amber-950 text-xs font-bold px-3 py-1 rounded-t-lg">
+        GÖSTERGE
       </div>
 
-      {/* Label */}
-      <div className="absolute -top-6 left-1/2 -translate-x-1/2 bg-amber-500 text-amber-950 text-[10px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap shadow">
-        Gösterge
+      {/* The indicator tile on a stand */}
+      <div className="relative">
+        {/* Stand */}
+        <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-20 h-3 bg-amber-700 rounded-b-lg shadow-md" />
+
+        {/* Tile holder */}
+        <div className="bg-amber-600 px-2 pt-2 pb-3 rounded-b-lg">
+          {/* The tile */}
+          <div className={cn(
+            'w-14 h-[72px] rounded-lg',
+            'bg-white',
+            'border-2 border-gray-200',
+            'flex flex-col items-center justify-center gap-1',
+            'shadow-lg',
+            'ring-2 ring-amber-400'
+          )}>
+            <span className={cn('text-3xl font-black', colors.text)}>
+              {tile.number}
+            </span>
+            <div className="flex gap-1">
+              <div className={cn('w-1.5 h-1.5 rounded-full', colors.dot)} />
+              <div className={cn('w-1.5 h-1.5 rounded-full', colors.dot)} />
+            </div>
+          </div>
+        </div>
       </div>
 
-      {/* Okey indicator text */}
-      <div className="text-center mt-3">
-        <span className="text-white/80 text-xs">
-          Okey: <span className={cn('font-bold', colorStyles[okeyTile.color]?.text || 'text-white')}>
-            {okeyTile.number}
-          </span>
+      {/* Okey info badge */}
+      <div className="mt-3 flex items-center gap-2 bg-green-600 text-white px-3 py-1.5 rounded-full shadow">
+        <span className="text-xs font-medium">Okey:</span>
+        <span className={cn('font-black', okeyColors.text, 'text-white bg-white/20 px-2 py-0.5 rounded')}>
+          {okeyTile.color === tile.color ? okeyTile.number : `${okeyTile.number}`}
         </span>
+        <span className={cn('w-3 h-3 rounded-full', okeyColors.dot)} />
       </div>
     </div>
   );
 }
 
-// Discarded tile in the center
+// Discarded tile (clickable to draw)
 export function DiscardedTile({
   tile,
   okeyTile,
@@ -298,12 +361,25 @@ export function DiscardedTile({
   canClick = false,
   className,
 }: {
-  tile: TileType;
+  tile?: TileType | null;
   okeyTile?: TileType | null;
   onClick?: () => void;
   canClick?: boolean;
   className?: string;
 }) {
+  if (!tile) {
+    return (
+      <div className={cn(
+        'w-14 h-[72px] rounded-lg border-2 border-dashed border-gray-400/30',
+        'flex items-center justify-center',
+        'bg-gray-500/10',
+        className
+      )}>
+        <span className="text-gray-400 text-xs font-medium">Boş</span>
+      </div>
+    );
+  }
+
   const isOkeyTile = okeyTile && isOkey(tile, okeyTile);
   const colors = colorStyles[tile.color] || colorStyles.black;
 
@@ -311,31 +387,76 @@ export function DiscardedTile({
     <div
       onClick={canClick ? onClick : undefined}
       className={cn(
-        'w-14 h-20 rounded-xl',
-        'bg-gradient-to-b from-amber-50 via-stone-50 to-amber-100',
-        'border-2 border-stone-200',
-        'shadow-lg shadow-black/20',
-        'flex flex-col items-center justify-center',
-        canClick && 'cursor-pointer hover:scale-105 hover:-translate-y-1 transition-all',
-        isOkeyTile && 'ring-2 ring-green-400',
+        'w-14 h-[72px] rounded-lg',
+        'bg-white',
+        'border-2 border-gray-200',
+        'flex flex-col items-center justify-center gap-1',
+        'shadow-lg',
+        canClick && 'cursor-pointer hover:scale-110 hover:-translate-y-2 hover:shadow-xl transition-all',
+        isOkeyTile && 'ring-3 ring-green-500 shadow-green-200',
         className
       )}
     >
       {tile.isJoker ? (
         <>
-          <span className="text-amber-600 text-3xl">★</span>
-          <span className="text-amber-700 font-bold text-[9px]">OKEY</span>
+          <span className="text-red-500 text-3xl font-black">☆</span>
+          <div className="flex gap-1">
+            <div className="w-1.5 h-1.5 rounded-full bg-red-400" />
+            <div className="w-1.5 h-1.5 rounded-full bg-red-400" />
+          </div>
         </>
       ) : (
         <>
-          <span className={cn('font-black text-3xl drop-shadow-sm', colors.text)}>
+          <span className={cn('font-black text-3xl', colors.text)}>
             {tile.number}
           </span>
-          {isOkeyTile && (
-            <span className="font-bold text-green-600 text-[9px]">OKEY</span>
-          )}
+          <div className="flex gap-1">
+            <div className={cn('w-1.5 h-1.5 rounded-full', colors.dot)} />
+            <div className={cn('w-1.5 h-1.5 rounded-full', colors.dot)} />
+          </div>
         </>
       )}
+    </div>
+  );
+}
+
+// Discard pile showing recent discards
+export function DiscardPile({
+  tiles,
+  okeyTile,
+  onClickTop,
+  canClickTop = false,
+  className,
+}: {
+  tiles: TileType[];
+  okeyTile?: TileType | null;
+  onClickTop?: () => void;
+  canClickTop?: boolean;
+  className?: string;
+}) {
+  const topTile = tiles[tiles.length - 1];
+
+  return (
+    <div className={cn('flex flex-col items-center', className)}>
+      {/* Label */}
+      <div className="bg-red-500 text-white text-xs font-bold px-3 py-1 rounded-t-lg">
+        ATILAN
+      </div>
+
+      {/* Discard area */}
+      <div className="bg-red-600/20 border-2 border-red-500/30 rounded-b-lg p-3">
+        <DiscardedTile
+          tile={topTile}
+          okeyTile={okeyTile}
+          onClick={onClickTop}
+          canClick={canClickTop}
+        />
+      </div>
+
+      {/* Count badge */}
+      <div className="mt-2 bg-gray-800 text-white text-sm font-bold px-3 py-1 rounded-full shadow">
+        {tiles.length}
+      </div>
     </div>
   );
 }
