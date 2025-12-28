@@ -1,0 +1,353 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ============================================
+// AUTH MODELS (NextAuth.js)
+// ============================================
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// ============================================
+// USER MODEL
+// ============================================
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  phone         String?   @unique
+  phoneVerified DateTime?
+  image         String?
+  password      String?   // For email/password auth
+
+  // Game-related fields
+  chips         Int       @default(1000)
+  rating        Int       @default(1000)
+  vipUntil      DateTime?
+  locale        String    @default("tr")
+
+  // Cosmetics
+  avatarId      String?
+  tileThemeId   String?
+  tableThemeId  String?
+
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relations
+  accounts      Account[]
+  sessions      Session[]
+  gamePlayers   GamePlayer[]
+  stats         UserStats?
+  sentMessages  Message[]
+  friendsSent   Friendship[] @relation("FriendshipSender")
+  friendsReceived Friendship[] @relation("FriendshipReceiver")
+  transactions  Transaction[]
+  achievements  UserAchievement[]
+
+  @@index([email])
+  @@index([phone])
+  @@index([rating])
+}
+
+model UserStats {
+  id            String   @id @default(cuid())
+  userId        String   @unique
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  gamesPlayed   Int      @default(0)
+  gamesWon      Int      @default(0)
+  gamesLost     Int      @default(0)
+  winStreak     Int      @default(0)
+  bestWinStreak Int      @default(0)
+  totalScore    Int      @default(0)
+
+  // Ranking
+  rank          Int?
+  rankUpdatedAt DateTime?
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([gamesWon])
+}
+
+// ============================================
+// GAME MODELS
+// ============================================
+
+enum GameStatus {
+  WAITING     // Waiting for players
+  STARTING    // Game is starting
+  PLAYING     // Game in progress
+  FINISHED    // Game completed
+  CANCELLED   // Game was cancelled
+}
+
+model Game {
+  id              String     @id @default(cuid())
+  status          GameStatus @default(WAITING)
+
+  // Game settings
+  maxPlayers      Int        @default(4)
+  isPrivate       Boolean    @default(false)
+  roomCode        String?    @unique
+
+  // Game state (stored as JSON)
+  indicatorTile   Json?      // The indicator tile
+  okeyTile        Json?      // The okey (wild card) tile
+  tileBag         Json?      // Remaining tiles in bag
+  discardPile     Json?      // Discarded tiles
+  currentTurn     Int        @default(0)
+
+  // Timing
+  turnStartedAt   DateTime?
+  turnTimeLimit   Int        @default(30) // seconds
+
+  // Results
+  winnerId        String?
+
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+  startedAt       DateTime?
+  finishedAt      DateTime?
+
+  // Relations
+  players         GamePlayer[]
+  moves           Move[]
+  messages        Message[]
+
+  @@index([status])
+  @@index([roomCode])
+  @@index([createdAt])
+}
+
+model GamePlayer {
+  id          String   @id @default(cuid())
+  gameId      String
+  game        Game     @relation(fields: [gameId], references: [id], onDelete: Cascade)
+
+  userId      String?  // null for AI players
+  user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  // Player state
+  position    Int      // 0-3, seating position
+  tiles       Json?    // Player's current tiles (hidden from others)
+  isAI        Boolean  @default(false)
+  aiDifficulty String? // "easy", "medium", "hard"
+
+  // Results
+  score       Int      @default(0)
+  isWinner    Boolean  @default(false)
+  finishOrder Int?     // 1st, 2nd, etc.
+
+  // Status
+  isConnected Boolean  @default(true)
+  isReady     Boolean  @default(false)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([gameId, position])
+  @@unique([gameId, userId])
+  @@index([gameId])
+  @@index([userId])
+}
+
+enum MoveType {
+  DRAW_PILE      // Draw from tile bag
+  DRAW_DISCARD   // Draw from discard pile
+  DISCARD        // Discard a tile
+  FINISH         // Declare win
+  TIMEOUT        // Turn timed out
+}
+
+model Move {
+  id          String   @id @default(cuid())
+  gameId      String
+  game        Game     @relation(fields: [gameId], references: [id], onDelete: Cascade)
+
+  playerId    String   // GamePlayer id
+  type        MoveType
+  tile        Json?    // The tile involved in the move
+
+  createdAt   DateTime @default(now())
+
+  @@index([gameId])
+  @@index([createdAt])
+}
+
+// ============================================
+// SOCIAL MODELS
+// ============================================
+
+enum FriendshipStatus {
+  PENDING
+  ACCEPTED
+  BLOCKED
+}
+
+model Friendship {
+  id         String           @id @default(cuid())
+  senderId   String
+  sender     User             @relation("FriendshipSender", fields: [senderId], references: [id], onDelete: Cascade)
+  receiverId String
+  receiver   User             @relation("FriendshipReceiver", fields: [receiverId], references: [id], onDelete: Cascade)
+  status     FriendshipStatus @default(PENDING)
+
+  createdAt  DateTime         @default(now())
+  updatedAt  DateTime         @updatedAt
+
+  @@unique([senderId, receiverId])
+  @@index([senderId])
+  @@index([receiverId])
+}
+
+model Message {
+  id        String   @id @default(cuid())
+  gameId    String
+  game      Game     @relation(fields: [gameId], references: [id], onDelete: Cascade)
+
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  content   String   @db.VarChar(500)
+
+  createdAt DateTime @default(now())
+
+  @@index([gameId])
+  @@index([createdAt])
+}
+
+// ============================================
+// PREMIUM & TRANSACTIONS
+// ============================================
+
+enum TransactionType {
+  CHIPS_PURCHASE
+  VIP_PURCHASE
+  COSMETIC_PURCHASE
+  CHIPS_REWARD
+  CHIPS_GAME_WIN
+  CHIPS_GAME_LOSS
+}
+
+enum TransactionStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+}
+
+model Transaction {
+  id          String            @id @default(cuid())
+  userId      String
+  user        User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  type        TransactionType
+  status      TransactionStatus @default(PENDING)
+  amount      Int               // Chips or currency amount
+  price       Decimal?          @db.Decimal(10, 2) // Real money price
+  currency    String?           @default("TRY")
+
+  itemId      String?           // Reference to purchased item
+  description String?
+
+  // Payment provider info
+  providerId  String?           // External transaction ID
+  provider    String?           // "stripe", "iyzico", etc.
+
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  @@index([userId])
+  @@index([createdAt])
+}
+
+// ============================================
+// ACHIEVEMENTS
+// ============================================
+
+model Achievement {
+  id          String   @id @default(cuid())
+  code        String   @unique // e.g., "FIRST_WIN", "WIN_STREAK_5"
+  nameKey     String   // i18n key for name
+  descKey     String   // i18n key for description
+  icon        String?
+  reward      Int      @default(0) // Chips reward
+
+  users       UserAchievement[]
+}
+
+model UserAchievement {
+  id            String      @id @default(cuid())
+  userId        String
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  achievementId String
+  achievement   Achievement @relation(fields: [achievementId], references: [id], onDelete: Cascade)
+
+  unlockedAt    DateTime    @default(now())
+
+  @@unique([userId, achievementId])
+  @@index([userId])
+}
+
+// ============================================
+// COSMETICS
+// ============================================
+
+model Cosmetic {
+  id          String   @id @default(cuid())
+  type        String   // "avatar", "tile_theme", "table_theme"
+  code        String   @unique
+  nameKey     String   // i18n key
+  previewUrl  String?
+  price       Int      @default(0) // Chips price (0 = free)
+  isVipOnly   Boolean  @default(false)
+
+  createdAt   DateTime @default(now())
+
+  @@index([type])
+}
