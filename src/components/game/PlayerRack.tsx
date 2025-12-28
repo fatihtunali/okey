@@ -1,6 +1,5 @@
 'use client';
 
-import { useState } from 'react';
 import { Tile as TileType } from '@/lib/game/types';
 import { Tile, TileSlot } from './Tile';
 import { cn } from '@/lib/utils';
@@ -10,9 +9,9 @@ interface PlayerRackProps {
   okeyTile?: TileType | null;
   selectedTileId?: string | null;
   onTileSelect?: (tile: TileType) => void;
-  onTileDoubleClick?: (tile: TileType) => void;
   isCurrentPlayer?: boolean;
   canInteract?: boolean;
+  showSlots?: boolean;
   className?: string;
 }
 
@@ -21,33 +20,44 @@ export function PlayerRack({
   okeyTile,
   selectedTileId,
   onTileSelect,
-  onTileDoubleClick,
   isCurrentPlayer = false,
   canInteract = true,
+  showSlots = false,
   className,
 }: PlayerRackProps) {
-  // Two rows of tiles (like real Okey rack)
+  // Split tiles into two rows like a real okey rack
   const topRow = tiles.slice(0, Math.ceil(tiles.length / 2));
   const bottomRow = tiles.slice(Math.ceil(tiles.length / 2));
-
-  // Fill empty slots to show rack structure
-  const maxPerRow = 8;
-  const topSlots = Math.max(0, maxPerRow - topRow.length);
-  const bottomSlots = Math.max(0, maxPerRow - bottomRow.length);
 
   return (
     <div
       className={cn(
-        'bg-gradient-to-b from-amber-700 to-amber-800 rounded-xl p-3 shadow-xl',
+        // Wooden rack appearance
+        'relative rounded-2xl p-4',
+        'bg-gradient-to-b from-amber-700 via-amber-800 to-amber-900',
         'border-4 border-amber-600',
-        isCurrentPlayer && 'ring-2 ring-green-400 ring-offset-2',
+        'shadow-2xl shadow-black/50',
+        // Current player highlight
+        isCurrentPlayer && 'ring-4 ring-green-500/50 ring-offset-4 ring-offset-transparent',
         className
       )}
     >
-      {/* Rack wooden frame effect */}
-      <div className="bg-amber-900/50 rounded-lg p-2 space-y-1">
+      {/* Wood grain texture overlay */}
+      <div className="absolute inset-0 opacity-10 rounded-xl pointer-events-none"
+        style={{
+          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`,
+        }}
+      />
+
+      {/* Inner felt-like surface */}
+      <div className="relative bg-amber-950/40 rounded-xl p-3 space-y-2">
+        {/* Tile grooves (visual guides) */}
+        <div className="absolute inset-3 pointer-events-none">
+          <div className="h-1/2 border-b border-amber-700/30" />
+        </div>
+
         {/* Top row */}
-        <div className="flex gap-1 justify-center">
+        <div className="relative flex gap-1.5 justify-center min-h-[80px] items-end pb-1">
           {topRow.map((tile) => (
             <Tile
               key={tile.id}
@@ -55,17 +65,17 @@ export function PlayerRack({
               okeyTile={okeyTile}
               isSelected={selectedTileId === tile.id}
               onClick={() => canInteract && onTileSelect?.(tile)}
-              size="md"
+              size="lg"
             />
           ))}
-          {/* Empty slots */}
-          {Array.from({ length: topSlots }).map((_, i) => (
-            <TileSlot key={`top-slot-${i}`} />
+          {/* Show empty slots if less than 8 tiles and showSlots is true */}
+          {showSlots && Array.from({ length: Math.max(0, 8 - topRow.length) }).map((_, i) => (
+            <TileSlot key={`top-slot-${i}`} size="lg" />
           ))}
         </div>
 
         {/* Bottom row */}
-        <div className="flex gap-1 justify-center">
+        <div className="relative flex gap-1.5 justify-center min-h-[80px] items-start pt-1">
           {bottomRow.map((tile) => (
             <Tile
               key={tile.id}
@@ -73,26 +83,31 @@ export function PlayerRack({
               okeyTile={okeyTile}
               isSelected={selectedTileId === tile.id}
               onClick={() => canInteract && onTileSelect?.(tile)}
-              size="md"
+              size="lg"
             />
           ))}
-          {/* Empty slots */}
-          {Array.from({ length: bottomSlots }).map((_, i) => (
-            <TileSlot key={`bottom-slot-${i}`} />
+          {/* Show empty slots if less than 8 tiles and showSlots is true */}
+          {showSlots && Array.from({ length: Math.max(0, 8 - bottomRow.length) }).map((_, i) => (
+            <TileSlot key={`bottom-slot-${i}`} size="lg" />
           ))}
         </div>
       </div>
+
+      {/* Rack edge highlight */}
+      <div className="absolute inset-x-2 top-0 h-1 bg-gradient-to-b from-amber-500/30 to-transparent rounded-t-xl" />
     </div>
   );
 }
 
-// Compact rack for opponent display (shows face-down tiles)
+// Compact opponent rack - shows tile count
 interface OpponentRackProps {
   tileCount: number;
   playerName: string;
   playerAvatar?: string;
   isCurrentTurn?: boolean;
+  isAI?: boolean;
   position: 'left' | 'top' | 'right';
+  thinkingText?: string;
   className?: string;
 }
 
@@ -101,72 +116,104 @@ export function OpponentRack({
   playerName,
   playerAvatar,
   isCurrentTurn = false,
+  isAI = false,
   position,
+  thinkingText,
   className,
 }: OpponentRackProps) {
   const isVertical = position === 'left' || position === 'right';
 
+  // Calculate how many mini tiles to show (max 8)
+  const visibleTiles = Math.min(tileCount, 8);
+  const extraTiles = Math.max(0, tileCount - 8);
+
   return (
     <div
       className={cn(
-        'flex items-center gap-2',
+        'flex items-center gap-3',
         isVertical && 'flex-col',
         position === 'right' && 'flex-row-reverse',
         className
       )}
     >
-      {/* Player info */}
+      {/* Player info card */}
       <div
         className={cn(
-          'flex items-center gap-2 bg-gray-800/80 rounded-lg px-3 py-2',
-          isCurrentTurn && 'ring-2 ring-green-400 animate-pulse',
-          isVertical && 'flex-col'
+          'flex items-center gap-3 rounded-xl px-4 py-3',
+          'bg-gradient-to-br from-stone-800/90 to-stone-900/90',
+          'border border-stone-700/50',
+          'backdrop-blur-sm shadow-lg',
+          isCurrentTurn && 'ring-2 ring-green-400 border-green-500/50',
+          isVertical && 'flex-col px-3 py-4'
         )}
       >
         {/* Avatar */}
-        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center text-white font-bold shadow">
+        <div className={cn(
+          'relative w-12 h-12 rounded-full overflow-hidden',
+          'bg-gradient-to-br from-amber-400 to-amber-600',
+          'flex items-center justify-center',
+          'text-white font-bold text-lg shadow-inner',
+          'border-2 border-amber-500/50'
+        )}>
           {playerAvatar ? (
-            <img src={playerAvatar} alt={playerName} className="w-full h-full rounded-full" />
+            <img src={playerAvatar} alt={playerName} className="w-full h-full object-cover" />
           ) : (
             playerName.charAt(0).toUpperCase()
           )}
+
+          {/* Online indicator */}
+          <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-green-500 rounded-full border-2 border-stone-800" />
         </div>
 
-        {/* Name and tile count */}
-        <div className={cn('text-center', isVertical && 'mt-1')}>
-          <div className="text-white text-sm font-medium truncate max-w-[80px]">
+        {/* Name and status */}
+        <div className={cn('text-center', isVertical ? 'mt-1' : '')}>
+          <div className="text-white font-semibold text-sm truncate max-w-[100px]">
             {playerName}
           </div>
-          <div className="text-amber-400 text-xs">
-            {tileCount} taş
+          <div className={cn(
+            'text-xs font-medium',
+            isCurrentTurn ? 'text-green-400' : 'text-amber-400/70'
+          )}>
+            {isCurrentTurn && thinkingText ? (
+              <span className="animate-pulse">{thinkingText}</span>
+            ) : (
+              `${tileCount} taş`
+            )}
           </div>
         </div>
       </div>
 
-      {/* Tiles (face down, compact) */}
+      {/* Mini tile rack */}
       <div
         className={cn(
-          'flex gap-0.5',
-          isVertical && 'flex-col'
+          'flex gap-0.5 p-2 rounded-lg',
+          'bg-gradient-to-br from-amber-800/80 to-amber-900/80',
+          'border border-amber-700/50',
+          'shadow-inner',
+          isVertical && 'flex-wrap justify-center max-w-[80px]'
         )}
       >
-        {/* Show mini face-down tiles */}
-        {Array.from({ length: Math.min(tileCount, 8) }).map((_, i) => (
+        {/* Mini face-down tiles */}
+        {Array.from({ length: visibleTiles }).map((_, i) => (
           <div
             key={i}
             className={cn(
-              'bg-gradient-to-br from-amber-800 to-amber-900 border border-amber-700 rounded',
-              isVertical ? 'w-6 h-4' : 'w-4 h-6',
-              'shadow-sm'
+              'rounded bg-gradient-to-br from-amber-700 to-amber-800',
+              'border border-amber-600/30',
+              'shadow-sm',
+              isVertical ? 'w-5 h-4' : 'w-5 h-7'
             )}
           />
         ))}
-        {tileCount > 8 && (
+
+        {/* Extra count badge */}
+        {extraTiles > 0 && (
           <div className={cn(
-            'text-amber-400 text-xs flex items-center justify-center',
-            isVertical ? 'w-6 h-4' : 'w-6 h-6'
+            'flex items-center justify-center',
+            'text-amber-300 text-xs font-bold',
+            isVertical ? 'w-5 h-4' : 'w-6 h-7'
           )}>
-            +{tileCount - 8}
+            +{extraTiles}
           </div>
         )}
       </div>

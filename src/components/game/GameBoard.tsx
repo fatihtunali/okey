@@ -1,9 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { GameState, Tile as TileType, GamePlayer } from '@/lib/game/types';
+import { GameState, Tile as TileType } from '@/lib/game/types';
 import { PlayerRack, OpponentRack } from './PlayerRack';
-import { Tile, TileStack } from './Tile';
+import { TileStack, IndicatorTile, DiscardedTile, TileSlot } from './Tile';
 import { cn } from '@/lib/utils';
 
 interface GameBoardProps {
@@ -16,6 +15,7 @@ interface GameBoardProps {
   onDiscard: () => void;
   onDeclareWin: () => void;
   timeRemaining?: number;
+  isProcessingAI?: boolean;
 }
 
 export function GameBoard({
@@ -28,6 +28,7 @@ export function GameBoard({
   onDiscard,
   onDeclareWin,
   timeRemaining = 30,
+  isProcessingAI = false,
 }: GameBoardProps) {
   const currentPlayerIndex = game.players.findIndex(p => p.id === currentPlayerId);
   const currentPlayer = game.players[currentPlayerIndex];
@@ -53,9 +54,10 @@ export function GameBoard({
   const isMyTurn = game.currentTurn === currentPlayerIndex;
   const canDraw = isMyTurn && game.turnPhase === 'draw';
   const canDiscard = isMyTurn && game.turnPhase === 'discard' && selectedTileId;
+  const topDiscard = game.discardPile[game.discardPile.length - 1];
 
   return (
-    <div className="relative w-full h-full min-h-[600px] flex flex-col">
+    <div className="relative w-full min-h-[700px] flex flex-col">
       {/* Top opponent */}
       <div className="flex justify-center py-4">
         {game.players.map((player, index) => {
@@ -68,16 +70,18 @@ export function GameBoard({
               playerName={player.name}
               playerAvatar={player.avatar}
               isCurrentTurn={game.currentTurn === index}
+              isAI={player.isAI}
               position="top"
+              thinkingText={game.currentTurn === index && isProcessingAI ? "Düşünüyor..." : undefined}
             />
           );
         })}
       </div>
 
-      {/* Middle section (left opponent, center, right opponent) */}
-      <div className="flex-1 flex items-center">
+      {/* Middle section */}
+      <div className="flex-1 flex items-center justify-center relative">
         {/* Left opponent */}
-        <div className="w-32 flex justify-center">
+        <div className="absolute left-4 top-1/2 -translate-y-1/2">
           {game.players.map((player, index) => {
             const position = getOpponentPosition(index);
             if (position !== 'left') return null;
@@ -88,26 +92,99 @@ export function GameBoard({
                 playerName={player.name}
                 playerAvatar={player.avatar}
                 isCurrentTurn={game.currentTurn === index}
+                isAI={player.isAI}
                 position="left"
+                thinkingText={game.currentTurn === index && isProcessingAI ? "Düşünüyor..." : undefined}
               />
             );
           })}
         </div>
 
-        {/* Center - Draw pile, Indicator, Discard pile */}
-        <div className="flex-1 flex items-center justify-center">
-          <CenterArea
-            game={game}
-            canDraw={canDraw}
-            onDrawFromPile={onDrawFromPile}
-            onDrawFromDiscard={onDrawFromDiscard}
-            timeRemaining={timeRemaining}
-            isMyTurn={isMyTurn}
-          />
+        {/* Center game area - the table */}
+        <div className="relative">
+          {/* Green felt table surface */}
+          <div className={cn(
+            'relative rounded-3xl p-8',
+            'bg-gradient-to-br from-green-700 via-green-800 to-green-900',
+            'border-8 border-amber-800',
+            'shadow-2xl shadow-black/50',
+            'min-w-[400px]'
+          )}>
+            {/* Felt texture overlay */}
+            <div className="absolute inset-0 rounded-2xl opacity-20 pointer-events-none"
+              style={{
+                backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`,
+              }}
+            />
+
+            {/* Timer */}
+            <div className="absolute -top-4 left-1/2 -translate-x-1/2 z-10">
+              <div
+                className={cn(
+                  'px-6 py-2 rounded-full font-bold text-lg shadow-lg',
+                  'border-2',
+                  isMyTurn ? 'bg-green-600 text-white border-green-400' : 'bg-stone-700 text-stone-300 border-stone-600',
+                  timeRemaining <= 10 && isMyTurn && 'bg-red-600 border-red-400 animate-pulse'
+                )}
+              >
+                {isMyTurn ? `${timeRemaining}s` : 'Bekle...'}
+              </div>
+            </div>
+
+            {/* Table items */}
+            <div className="relative flex items-center justify-center gap-12 py-4">
+              {/* Draw pile */}
+              <div className="flex flex-col items-center gap-3">
+                <TileStack
+                  count={game.tileBag.length}
+                  size="lg"
+                  onClick={onDrawFromPile}
+                  canClick={canDraw}
+                />
+                <span className="text-white/70 text-sm font-medium">Yığın</span>
+              </div>
+
+              {/* Indicator tile */}
+              {game.indicatorTile && game.okeyTile && (
+                <IndicatorTile
+                  tile={game.indicatorTile}
+                  okeyTile={game.okeyTile}
+                />
+              )}
+
+              {/* Discard pile */}
+              <div className="flex flex-col items-center gap-3">
+                {topDiscard ? (
+                  <DiscardedTile
+                    tile={topDiscard}
+                    okeyTile={game.okeyTile}
+                    onClick={onDrawFromDiscard}
+                    canClick={canDraw}
+                  />
+                ) : (
+                  <div className="w-14 h-20 rounded-xl border-2 border-dashed border-white/30 flex items-center justify-center">
+                    <span className="text-white/40 text-xs">Boş</span>
+                  </div>
+                )}
+                <span className="text-white/70 text-sm font-medium">
+                  Atılan ({game.discardPile.length})
+                </span>
+              </div>
+            </div>
+
+            {/* Draw hint */}
+            {canDraw && (
+              <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 whitespace-nowrap">
+                <div className="bg-amber-500 text-amber-950 px-4 py-1.5 rounded-full text-sm font-bold shadow-lg animate-bounce">
+                  Taş çekin!
+                </div>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Right opponent */}
-        <div className="w-32 flex justify-center">
+        <div className="absolute right-4 top-1/2 -translate-y-1/2">
           {game.players.map((player, index) => {
             const position = getOpponentPosition(index);
             if (position !== 'right') return null;
@@ -118,21 +195,29 @@ export function GameBoard({
                 playerName={player.name}
                 playerAvatar={player.avatar}
                 isCurrentTurn={game.currentTurn === index}
+                isAI={player.isAI}
                 position="right"
+                thinkingText={game.currentTurn === index && isProcessingAI ? "Düşünüyor..." : undefined}
               />
             );
           })}
         </div>
       </div>
 
-      {/* Bottom - Current player's rack and controls */}
-      <div className="py-4 space-y-4">
+      {/* Bottom - Current player area */}
+      <div className="py-6 space-y-4">
         {/* Action buttons */}
         <div className="flex justify-center gap-4">
           {canDiscard && (
             <button
               onClick={onDiscard}
-              className="px-6 py-2 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg shadow-lg transition-colors"
+              className={cn(
+                'px-8 py-3 rounded-xl font-bold text-lg shadow-lg',
+                'bg-gradient-to-r from-red-500 to-red-600',
+                'hover:from-red-600 hover:to-red-700',
+                'text-white border-2 border-red-400',
+                'transition-all hover:scale-105 active:scale-100'
+              )}
             >
               Taşı At
             </button>
@@ -140,7 +225,14 @@ export function GameBoard({
           {canDiscard && currentPlayer.tiles.length === 15 && (
             <button
               onClick={onDeclareWin}
-              className="px-6 py-2 bg-green-600 hover:bg-green-700 text-white font-bold rounded-lg shadow-lg transition-colors animate-pulse"
+              className={cn(
+                'px-8 py-3 rounded-xl font-bold text-lg shadow-lg',
+                'bg-gradient-to-r from-green-500 to-green-600',
+                'hover:from-green-600 hover:to-green-700',
+                'text-white border-2 border-green-400',
+                'transition-all hover:scale-105 active:scale-100',
+                'animate-pulse'
+              )}
             >
               Bitir!
             </button>
@@ -155,110 +247,27 @@ export function GameBoard({
               okeyTile={game.okeyTile}
               selectedTileId={selectedTileId}
               onTileSelect={onTileSelect}
-              isCurrentPlayer={true}
+              isCurrentPlayer={isMyTurn}
               canInteract={isMyTurn && game.turnPhase === 'discard'}
             />
           </div>
         )}
-      </div>
-    </div>
-  );
-}
 
-// Center area with draw pile, indicator, and discard pile
-interface CenterAreaProps {
-  game: GameState;
-  canDraw: boolean;
-  onDrawFromPile: () => void;
-  onDrawFromDiscard: () => void;
-  timeRemaining: number;
-  isMyTurn: boolean;
-}
-
-function CenterArea({
-  game,
-  canDraw,
-  onDrawFromPile,
-  onDrawFromDiscard,
-  timeRemaining,
-  isMyTurn,
-}: CenterAreaProps) {
-  const topDiscard = game.discardPile[game.discardPile.length - 1];
-
-  return (
-    <div className="bg-green-800/80 rounded-2xl p-8 shadow-2xl border-4 border-green-700">
-      {/* Timer */}
-      <div className="flex justify-center mb-4">
-        <div
-          className={cn(
-            'px-4 py-2 rounded-full font-bold text-lg',
-            isMyTurn ? 'bg-green-600 text-white' : 'bg-gray-600 text-gray-300',
-            timeRemaining <= 10 && isMyTurn && 'bg-red-600 animate-pulse'
-          )}
-        >
-          {timeRemaining}s
-        </div>
-      </div>
-
-      <div className="flex items-center gap-8">
-        {/* Draw pile */}
-        <div className="flex flex-col items-center gap-2">
-          <div
-            onClick={canDraw ? onDrawFromPile : undefined}
-            className={cn(
-              'transition-transform',
-              canDraw && 'cursor-pointer hover:scale-105'
-            )}
-          >
-            <TileStack count={game.tileBag.length} />
-          </div>
-          <span className="text-white/80 text-sm">Yığın</span>
-        </div>
-
-        {/* Indicator tile (okey göstergesi) */}
-        <div className="flex flex-col items-center gap-2">
-          {game.indicatorTile && (
-            <div className="relative">
-              <Tile tile={game.indicatorTile} size="lg" />
-              <div className="absolute -top-2 -right-2 bg-amber-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded">
-                Gösterge
+        {/* Player info */}
+        {currentPlayer && (
+          <div className="flex justify-center">
+            <div className="flex items-center gap-3 bg-stone-800/80 backdrop-blur-sm rounded-xl px-4 py-2">
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center text-white font-bold">
+                {currentPlayer.name.charAt(0)}
+              </div>
+              <div>
+                <div className="text-white font-semibold">{currentPlayer.name}</div>
+                <div className="text-amber-400/70 text-sm">{currentPlayer.tiles.length} taş</div>
               </div>
             </div>
-          )}
-          <span className="text-white/80 text-sm">
-            Okey: {game.okeyTile?.color} {game.okeyTile?.number}
-          </span>
-        </div>
-
-        {/* Discard pile */}
-        <div className="flex flex-col items-center gap-2">
-          {topDiscard ? (
-            <div
-              onClick={canDraw ? onDrawFromDiscard : undefined}
-              className={cn(
-                'transition-transform',
-                canDraw && 'cursor-pointer hover:scale-105'
-              )}
-            >
-              <Tile tile={topDiscard} okeyTile={game.okeyTile} size="lg" />
-            </div>
-          ) : (
-            <div className="w-12 h-16 rounded-lg border-2 border-dashed border-white/30 flex items-center justify-center">
-              <span className="text-white/50 text-xs">Boş</span>
-            </div>
-          )}
-          <span className="text-white/80 text-sm">
-            Atılan ({game.discardPile.length})
-          </span>
-        </div>
+          </div>
+        )}
       </div>
-
-      {/* Draw hint */}
-      {canDraw && (
-        <div className="mt-4 text-center text-white font-medium animate-bounce">
-          Taş çekin! (Yığından veya atılandan)
-        </div>
-      )}
     </div>
   );
 }
