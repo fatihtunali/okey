@@ -69,14 +69,20 @@ export default function Home() {
   const text = t[lang];
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-red-950 via-red-900 to-stone-900">
-      {/* Decorative Pattern Overlay */}
-      <div className="absolute inset-0 opacity-5" style={{
-        backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
-      }} />
+    <div className="min-h-screen bg-stone-900">
+      {/* Hero Background Image */}
+      <div className="fixed inset-0 z-0">
+        <img
+          src="/hero-okey.png"
+          alt="Okey masası"
+          className="w-full h-full object-cover"
+        />
+        {/* Dark overlay for readability */}
+        <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/50 to-stone-900" />
+      </div>
 
       {/* Header */}
-      <header className="relative flex items-center justify-between px-6 py-4">
+      <header className="relative z-10 flex items-center justify-between px-6 py-4">
         <div className="flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-amber-500 text-xl font-bold text-red-950 shadow-lg">
             ◆
@@ -121,7 +127,7 @@ export default function Home() {
       </header>
 
       {/* Hero Section */}
-      <main className="relative flex flex-col items-center px-6 py-12 text-center">
+      <main className="relative z-10 flex flex-col items-center px-6 py-12 text-center">
         {/* Decorative Tiles */}
         <div className="mb-8 flex gap-3">
           {[
@@ -198,7 +204,7 @@ export default function Home() {
       </main>
 
       {/* Features Section */}
-      <section className="relative px-6 py-16">
+      <section className="relative z-10 px-6 py-16 bg-gradient-to-b from-transparent to-stone-900/90">
         <h3 className="mb-12 text-center text-3xl font-black text-white">
           {text.features.title}
         </h3>
@@ -222,7 +228,7 @@ export default function Home() {
       </section>
 
       {/* How to Play Section */}
-      <section className="relative px-6 py-16">
+      <section className="relative z-10 px-6 py-16 bg-stone-900/90">
         <h3 className="mb-12 text-center text-3xl font-black text-white">
           {text.howTo.title}
         </h3>
@@ -255,7 +261,7 @@ export default function Home() {
       </section>
 
       {/* CTA Section */}
-      <section className="relative px-6 py-16">
+      <section className="relative z-10 px-6 py-16 bg-stone-900">
         <div className="mx-auto max-w-2xl rounded-3xl bg-gradient-to-r from-amber-500/20 to-red-500/20 border border-amber-500/20 p-10 text-center backdrop-blur">
           <h3 className="mb-4 text-3xl font-black text-white">
             {lang === "tr" ? "Hazır mısın?" : "Ready?"}
@@ -272,7 +278,7 @@ export default function Home() {
       </section>
 
       {/* Footer */}
-      <footer className="relative border-t border-amber-500/10 px-6 py-8">
+      <footer className="relative z-10 border-t border-amber-500/10 px-6 py-8 bg-stone-900">
         <div className="mx-auto max-w-6xl flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-500 text-sm font-bold text-red-950">
