@@ -157,12 +157,26 @@ export default function Home() {
           {text.description}
         </p>
 
+        {/* Game Mode Selection */}
+        <div className="flex flex-col gap-4 sm:flex-row mb-8">
+          <a
+            href="/play?mode=regular"
+            className="group flex items-center justify-center gap-3 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 px-10 py-5 text-xl font-black text-red-950 shadow-2xl transition hover:from-amber-400 hover:to-amber-500 hover:scale-105"
+          >
+            <span className="text-2xl transition group-hover:scale-125">▶</span>
+            {lang === "tr" ? "Normal Okey" : "Regular Okey"}
+          </a>
+          <a
+            href="/play?mode=okey101"
+            className="group flex items-center justify-center gap-3 rounded-xl bg-gradient-to-r from-red-600 to-red-700 px-10 py-5 text-xl font-black text-white shadow-2xl transition hover:from-red-500 hover:to-red-600 hover:scale-105"
+          >
+            <span className="text-2xl transition group-hover:scale-125">▶</span>
+            101 Okey
+          </a>
+        </div>
+
         {/* Action Buttons */}
         <div className="flex flex-col gap-4 sm:flex-row">
-          <button className="group flex items-center justify-center gap-3 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 px-10 py-5 text-xl font-black text-red-950 shadow-2xl transition hover:from-amber-400 hover:to-amber-500 hover:scale-105">
-            <span className="text-2xl transition group-hover:scale-125">▶</span>
-            {text.quickMatch}
-          </button>
           <button className="rounded-xl border-2 border-amber-500/40 bg-black/20 px-8 py-5 text-lg font-bold text-amber-400 backdrop-blur transition hover:bg-amber-500/20 hover:border-amber-400">
             {text.createRoom}
           </button>
