@@ -20,6 +20,7 @@ interface GameBoardProps {
   onDrawFromPile: () => void;
   onDrawFromDiscard: () => void;
   onDiscard: () => void;
+  onDiscardById?: (tileId: string) => void;
   onDeclareWin: () => void;
   onTileMove?: (fromIndex: number, toIndex: number) => void;
   onSortByGroups?: () => void;
@@ -150,6 +151,8 @@ interface PlayerRackProps {
   canSelect: boolean;
   // Discard area props (on the right - where player discards to)
   myLastDiscard?: TileType | null;
+  canDiscard?: boolean;
+  onDiscardDrop?: (tileId: string) => void;
   // Pick-up area props (from left opponent's discard)
   leftOpponentDiscard?: TileType | null;
   canPickFromLeft?: boolean;
@@ -167,6 +170,8 @@ function PlayerRack({
   onSortByRuns,
   canSelect,
   myLastDiscard,
+  canDiscard,
+  onDiscardDrop,
   leftOpponentDiscard,
   canPickFromLeft,
   onPickFromLeft,
@@ -176,16 +181,28 @@ function PlayerRack({
     return acc;
   }, {} as Record<string, TileType>);
 
-  const handleDragStart = (index: number) => (e: React.DragEvent) => {
+  // Drag start - store both index and tile ID
+  const handleDragStart = (index: number, tileId: string) => (e: React.DragEvent) => {
     e.dataTransfer.setData('text/plain', index.toString());
+    e.dataTransfer.setData('tileId', tileId);
+    e.dataTransfer.setData('source', 'rack');
     e.dataTransfer.effectAllowed = 'move';
   };
 
+  // Handle drop on rack slot (for rearranging)
   const handleDrop = (toIndex: number) => (e: React.DragEvent) => {
     e.preventDefault();
-    const fromIndex = parseInt(e.dataTransfer.getData('text/plain'));
-    if (fromIndex !== toIndex && onTileMove) {
-      onTileMove(fromIndex, toIndex);
+    const source = e.dataTransfer.getData('source');
+
+    if (source === 'rack') {
+      // Rearranging within rack
+      const fromIndex = parseInt(e.dataTransfer.getData('text/plain'));
+      if (fromIndex !== toIndex && onTileMove) {
+        onTileMove(fromIndex, toIndex);
+      }
+    } else if (source === 'leftOpponent' && onPickFromLeft) {
+      // Picking from left opponent's discard
+      onPickFromLeft();
     }
   };
 
@@ -194,9 +211,28 @@ function PlayerRack({
     e.dataTransfer.dropEffect = 'move';
   };
 
+  // Handle drop on discard area (right side)
+  const handleDiscardDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    const source = e.dataTransfer.getData('source');
+    const tileId = e.dataTransfer.getData('tileId');
+
+    if (source === 'rack' && tileId && canDiscard && onDiscardDrop) {
+      onDiscardDrop(tileId);
+    }
+  };
+
+  // Handle drag start from left opponent's discard
+  const handleLeftOpponentDragStart = (e: React.DragEvent) => {
+    if (!canPickFromLeft || !leftOpponentDiscard) return;
+    e.dataTransfer.setData('source', 'leftOpponent');
+    e.dataTransfer.setData('tileId', leftOpponentDiscard.id);
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
   const renderSlot = (index: number) => {
-    const tileId = rackLayout[index];
-    const tile = tileId ? tileMap[tileId] : null;
+    const slotTileId = rackLayout[index];
+    const tile = slotTileId ? tileMap[slotTileId] : null;
 
     if (tile) {
       return (
@@ -212,7 +248,7 @@ function PlayerRack({
             size="lg"
             onClick={canSelect ? () => onTileSelect(tile) : undefined}
             draggable
-            onDragStart={handleDragStart(index)}
+            onDragStart={handleDragStart(index, tile.id)}
           />
         </motion.div>
       );
@@ -233,19 +269,18 @@ function PlayerRack({
 
   return (
     <div className="flex items-center gap-2">
-      {/* Left side - Pick from left opponent's discard */}
+      {/* Left side - Pick from left opponent's discard (draggable) */}
       <div className="flex items-center gap-2">
-        <motion.button
-          onClick={canPickFromLeft ? onPickFromLeft : undefined}
-          disabled={!canPickFromLeft}
+        <div
           className={cn(
             'flex flex-col items-center justify-center',
             'w-16 h-24 md:w-18 md:h-28 rounded-lg',
             'bg-gray-800/80 border-2',
-            canPickFromLeft ? 'border-green-400 cursor-pointer' : 'border-gray-600'
+            canPickFromLeft ? 'border-green-400 cursor-grab' : 'border-gray-600'
           )}
-          whileHover={canPickFromLeft ? { scale: 1.05 } : {}}
-          whileTap={canPickFromLeft ? { scale: 0.95 } : {}}
+          draggable={canPickFromLeft && !!leftOpponentDiscard}
+          onDragStart={handleLeftOpponentDragStart}
+          onClick={canPickFromLeft ? onPickFromLeft : undefined}
         >
           <div className="text-[9px] text-gray-400 mb-1">Sol oyuncu</div>
           <div className={cn(
@@ -254,7 +289,7 @@ function PlayerRack({
             canPickFromLeft ? 'border-green-400' : 'border-gray-700'
           )}>
             {leftOpponentDiscard ? (
-              <div className="transform scale-75">
+              <div className="transform scale-75 pointer-events-none">
                 <TurkishTile tile={leftOpponentDiscard} okeyTile={okeyTile} size="sm" />
               </div>
             ) : (
@@ -262,9 +297,9 @@ function PlayerRack({
             )}
           </div>
           {canPickFromLeft && leftOpponentDiscard && (
-            <span className="text-green-400 text-[9px] mt-1">Al</span>
+            <span className="text-green-400 text-[9px] mt-1">Sürükle/Tıkla</span>
           )}
-        </motion.button>
+        </div>
 
         {/* Left button - ÇİFT DİZ (Sort by groups/pairs) */}
         <button
@@ -334,16 +369,22 @@ function PlayerRack({
           <span className="text-[10px] md:text-xs font-bold">DİZ</span>
         </button>
 
-        {/* My discard area - on my right */}
-        <div className={cn(
-          'flex flex-col items-center justify-center',
-          'w-16 h-24 md:w-18 md:h-28 rounded-lg',
-          'bg-gray-800/80 border-2 border-gray-600'
-        )}>
+        {/* My discard area - on my right (drop zone) */}
+        <div
+          className={cn(
+            'flex flex-col items-center justify-center',
+            'w-16 h-24 md:w-18 md:h-28 rounded-lg',
+            'bg-gray-800/80 border-2',
+            canDiscard ? 'border-red-400 border-dashed' : 'border-gray-600'
+          )}
+          onDrop={handleDiscardDrop}
+          onDragOver={canDiscard ? handleDragOver : undefined}
+        >
           <div className="text-[9px] text-gray-400 mb-1">Attığım</div>
           <div className={cn(
             'w-12 h-16 rounded-lg flex items-center justify-center',
-            'bg-gray-900/60 border border-gray-700'
+            'bg-gray-900/60 border',
+            canDiscard ? 'border-red-400' : 'border-gray-700'
           )}>
             {myLastDiscard ? (
               <div className="transform scale-75">
@@ -518,6 +559,7 @@ export const TurkishGameBoard = memo(function TurkishGameBoard({
   onDrawFromPile,
   onDrawFromDiscard,
   onDiscard,
+  onDiscardById,
   onDeclareWin,
   onTileMove,
   onSortByGroups,
@@ -528,10 +570,12 @@ export const TurkishGameBoard = memo(function TurkishGameBoard({
   const currentPlayer = game.players.find(p => p.id === currentPlayerId);
   const currentPlayerIndex = game.players.findIndex(p => p.id === currentPlayerId);
 
-  // Get opponents
+  // Get opponents - In Okey, turns go counterclockwise
+  // So: right = next player, top = player after next, left = previous player (who just discarded)
   const opponents = useMemo(() => {
     const result: { player: typeof game.players[0]; position: 'left' | 'top' | 'right'; index: number }[] = [];
-    const positions: ('left' | 'top' | 'right')[] = ['left', 'top', 'right'];
+    // Counterclockwise: right -> top -> left
+    const positions: ('left' | 'top' | 'right')[] = ['right', 'top', 'left'];
 
     for (let i = 1; i < game.players.length && result.length < 3; i++) {
       const idx = (currentPlayerIndex + i) % game.players.length;
@@ -698,6 +742,8 @@ export const TurkishGameBoard = memo(function TurkishGameBoard({
             onSortByRuns={onSortByRuns}
             canSelect={game.turnPhase === 'discard'}
             myLastDiscard={null}
+            canDiscard={isMyTurn && game.turnPhase === 'discard' && !isProcessingAI}
+            onDiscardDrop={onDiscardById}
             leftOpponentDiscard={lastDiscardedTile}
             canPickFromLeft={canPickFromLeftOpponent}
             onPickFromLeft={onDrawFromDiscard}

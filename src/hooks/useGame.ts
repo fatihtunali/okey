@@ -249,6 +249,19 @@ export function useGame(options: UseGameOptions) {
     }
   }, [game, options.playerId, selectedTileId]);
 
+  // Discard a specific tile by ID (for drag-drop)
+  const handleDiscardById = useCallback((tileId: string) => {
+    if (!game) return;
+    try {
+      const newGame = discardTile(game, options.playerId, tileId);
+      setGame(newGame);
+      setSelectedTileId(null);
+      setError(null);
+    } catch (err) {
+      setError((err as Error).message);
+    }
+  }, [game, options.playerId]);
+
   const handleDeclareWin = useCallback(() => {
     if (!game || !selectedTileId) return;
     try {
@@ -346,6 +359,7 @@ export function useGame(options: UseGameOptions) {
     handleDrawFromPile,
     handleDrawFromDiscard,
     handleDiscard,
+    handleDiscardById,
     handleDeclareWin,
     handleTileSelect,
     handleTileMove,

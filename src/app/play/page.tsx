@@ -44,6 +44,7 @@ function PlayContent() {
     handleDrawFromPile,
     handleDrawFromDiscard,
     handleDiscard,
+    handleDiscardById,
     handleDeclareWin,
     handleTileSelect,
     handleTileMove,
@@ -355,6 +356,7 @@ function PlayContent() {
             onDrawFromPile={isApiGame ? () => handleApiDraw('pile') : handleDrawFromPile}
             onDrawFromDiscard={isApiGame ? () => handleApiDraw('discard') : handleDrawFromDiscard}
             onDiscard={isApiGame ? handleApiDiscard : handleDiscard}
+            onDiscardById={isApiGame ? undefined : handleDiscardById}
             onDeclareWin={isApiGame ? handleApiFinish : handleDeclareWin}
             onTileMove={handleTileMove}
             onSortByGroups={handleSortByGroups}
