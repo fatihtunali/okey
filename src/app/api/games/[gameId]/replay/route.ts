@@ -57,7 +57,8 @@ export async function GET(
     });
 
     // Transform moves to events
-    const events = moves.map((move) => ({
+    type MoveType = { id: string; gameId: string; type: string; playerId: string; tile: unknown; createdAt: Date };
+    const events = moves.map((move: MoveType) => ({
       id: move.id,
       gameId: move.gameId,
       type: move.type,
@@ -67,7 +68,8 @@ export async function GET(
     }));
 
     // Build game response
-    const players = game.players.map((player) => ({
+    type PlayerType = { id: string; position: number; isAI: boolean; user: { id: string; name: string | null; image: string | null; rating: number } | null; score: number; isWinner: boolean; finishOrder: number | null };
+    const players = game.players.map((player: PlayerType) => ({
       id: player.id,
       position: player.position,
       name: player.isAI ? `Bot ${player.position}` : player.user?.name,

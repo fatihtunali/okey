@@ -54,7 +54,8 @@ export async function GET(
     });
 
     // Transform to GameEvent format
-    const events = moves.map((move) => ({
+    type MoveType = { id: string; gameId: string; type: string; playerId: string; tile: unknown; createdAt: Date };
+    const events = moves.map((move: MoveType) => ({
       id: move.id,
       gameId: move.gameId,
       type: move.type,

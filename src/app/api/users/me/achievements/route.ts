@@ -23,7 +23,9 @@ export async function GET() {
     });
 
     // Transform to response format
-    const response = userAchievements.map((ua) => ({
+    type AchievementType = { id: string; code: string; nameKey: string; descKey: string; icon: string | null; reward: number };
+    type UserAchievementType = { achievement: AchievementType; unlockedAt: Date };
+    const response = userAchievements.map((ua: UserAchievementType) => ({
       achievement: {
         id: ua.achievement.id,
         code: ua.achievement.code,

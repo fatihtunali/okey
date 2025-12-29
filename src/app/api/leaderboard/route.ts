@@ -50,7 +50,8 @@ export async function GET(request: NextRequest) {
     });
 
     // Transform to leaderboard format
-    const leaderboard = users.map((user, index) => {
+    type UserType = { id: string; name: string | null; image: string | null; rating: number; vipUntil: Date | null; stats: { gamesWon: number; bestWinStreak: number } | null };
+    const leaderboard = users.map((user: UserType, index: number) => {
       let value: number;
       switch (valueField) {
         case 'gamesWon':
