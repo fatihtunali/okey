@@ -14,7 +14,11 @@
       "Bash(npm run build:*)",
       "WebFetch(domain:www.pagat.com)",
       "WebSearch",
-      "WebFetch(domain:github.com)"
+      "WebFetch(domain:github.com)",
+      "Bash(tree:*)",
+      "Bash(git -C \"C:\\\\Users\\\\fatih\\\\Desktop\\\\okey\" log --oneline -10)",
+      "Bash(npx prisma migrate:*)",
+      "Bash(npx prisma generate:*)"
     ]
   }
 }

@@ -1,0 +1,1265 @@
+openapi: 3.0.3
+info:
+  title: Hadi Hep Beraber - Okey Game API
+  description: API for Turkish Okey game platform
+  version: 1.0.0
+
+servers:
+  - url: /api
+    description: Next.js API routes
+
+tags:
+  - name: auth
+    description: Authentication endpoints
+  - name: users
+    description: User profile and settings
+  - name: games
+    description: Game management
+  - name: game-actions
+    description: In-game actions (via Socket.io primarily, REST fallback)
+  - name: game-events
+    description: Game history and replay
+  - name: friends
+    description: Friend system
+  - name: shop
+    description: Chips, VIP, cosmetics
+  - name: leaderboard
+    description: Rankings and stats
+
+paths:
+  # ============================================
+  # AUTH
+  # ============================================
+  /auth/register:
+    post:
+      tags: [auth]
+      summary: Register with email/password
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password, name]
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+                  minLength: 8
+                name:
+                  type: string
+                locale:
+                  type: string
+                  enum: [tr, en]
+                  default: tr
+      responses:
+        '201':
+          description: User created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          description: Invalid input or email taken
+
+  /auth/login:
+    post:
+      tags: [auth]
+      summary: Login with email/password
+      description: Uses NextAuth credentials provider
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email:
+                  type: string
+                password:
+                  type: string
+      responses:
+        '200':
+          description: Login successful, session created
+        '401':
+          description: Invalid credentials
+
+  /auth/phone/send-code:
+    post:
+      tags: [auth]
+      summary: Send SMS verification code
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [phone]
+              properties:
+                phone:
+                  type: string
+                  example: "+905551234567"
+      responses:
+        '200':
+          description: Code sent
+        '429':
+          description: Too many requests
+
+  /auth/phone/verify:
+    post:
+      tags: [auth]
+      summary: Verify phone with SMS code
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [phone, code]
+              properties:
+                phone:
+                  type: string
+                code:
+                  type: string
+      responses:
+        '200':
+          description: Phone verified, session created
+        '400':
+          description: Invalid or expired code
+
+  # ============================================
+  # USERS
+  # ============================================
+  /users/me:
+    get:
+      tags: [users]
+      summary: Get current user profile
+      security:
+        - session: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+
+    patch:
+      tags: [users]
+      summary: Update current user profile
+      security:
+        - session: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                locale:
+                  type: string
+                  enum: [tr, en]
+                avatarId:
+                  type: string
+                tileThemeId:
+                  type: string
+                tableThemeId:
+                  type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+
+  /users/me/stats:
+    get:
+      tags: [users]
+      summary: Get current user stats
+      security:
+        - session: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserStats'
+
+  /users/{userId}:
+    get:
+      tags: [users]
+      summary: Get user public profile
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserPublic'
+
+  # ============================================
+  # GAMES
+  # ============================================
+  /games:
+    get:
+      tags: [games]
+      summary: List available games to join
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [WAITING]
+            default: WAITING
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/GameLobby'
+
+    post:
+      tags: [games]
+      summary: Create a new game
+      security:
+        - session: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                mode:
+                  type: string
+                  enum: [regular, okey101]
+                  default: regular
+                maxPlayers:
+                  type: integer
+                  enum: [2, 3, 4]
+                  default: 4
+                isPrivate:
+                  type: boolean
+                  default: false
+                turnTimeLimit:
+                  type: integer
+                  default: 30
+                fillWithAI:
+                  type: boolean
+                  default: true
+                  description: Auto-fill with AI players and start immediately
+                rules:
+                  $ref: '#/components/schemas/GameRules'
+                stake:
+                  type: object
+                  description: Entry fee and pot (optional, for chip games)
+                  properties:
+                    entryFee:
+                      type: integer
+                      description: Chips required to join
+                    potDistribution:
+                      type: string
+                      enum: [winner_takes_all, proportional]
+                      default: winner_takes_all
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Game'
+        '400':
+          description: Not enough chips for stake
+
+  /games/{gameId}:
+    get:
+      tags: [games]
+      summary: Get game details
+      parameters:
+        - name: gameId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Game'
+
+  /games/{gameId}/join:
+    post:
+      tags: [games]
+      summary: Join an existing game
+      security:
+        - session: []
+      parameters:
+        - name: gameId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Joined successfully
+        '400':
+          description: Game full or already started
+        '404':
+          description: Game not found
+
+  /games/{gameId}/leave:
+    post:
+      tags: [games]
+      summary: Leave a game (before it starts)
+      security:
+        - session: []
+      parameters:
+        - name: gameId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Left successfully
+
+  /games/{gameId}/ready:
+    post:
+      tags: [games]
+      summary: Mark yourself as ready
+      security:
+        - session: []
+      parameters:
+        - name: gameId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Ready status updated
+
+  /games/join-by-code:
+    post:
+      tags: [games]
+      summary: Join a private game by room code
+      security:
+        - session: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [roomCode]
+              properties:
+                roomCode:
+                  type: string
+                  example: "ABC123"
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Game'
+        '404':
+          description: Invalid room code
+
+  # ============================================
+  # GAME ACTIONS (REST fallback, prefer Socket.io)
+  # ============================================
+  /games/{gameId}/draw:
+    post:
+      tags: [game-actions]
+      summary: Draw a tile
+      security:
+        - session: []
+      parameters:
+        - name: gameId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [source]
+              properties:
+                source:
+                  type: string
+                  enum: [pile, discard]
+      responses:
+        '200':
+          description: Tile drawn
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  tile:
+                    $ref: '#/components/schemas/Tile'
+        '400':
+          description: Not your turn or wrong phase
+
+  /games/{gameId}/discard:
+    post:
+      tags: [game-actions]
+      summary: Discard a tile
+      security:
+        - session: []
+      parameters:
+        - name: gameId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [tileId]
+              properties:
+                tileId:
+                  type: string
+      responses:
+        '200':
+          description: Tile discarded
+        '400':
+          description: Not your turn, wrong phase, or tile not in hand
+
+  /games/{gameId}/finish:
+    post:
+      tags: [game-actions]
+      summary: Declare win
+      security:
+        - session: []
+      parameters:
+        - name: gameId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [discardTileId]
+              properties:
+                discardTileId:
+                  type: string
+                  description: Tile to discard when finishing
+      responses:
+        '200':
+          description: Win declared successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  winner:
+                    type: string
+                  scores:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        playerId:
+                          type: string
+                        score:
+                          type: integer
+        '400':
+          description: Invalid winning hand
+
+  /games/{gameId}/validate-hand:
+    post:
+      tags: [game-actions]
+      summary: Validate hand without finishing
+      description: |
+        Check if current hand is a valid winning hand.
+        Useful for client-side validation, AI testing, and cheat detection.
+      security:
+        - session: []
+      parameters:
+        - name: gameId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                discardTileId:
+                  type: string
+                  description: Tile to exclude when validating (simulates discard)
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  isValid:
+                    type: boolean
+                  groups:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/TileGroup'
+                  remainingTiles:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Tile'
+                  errorMessage:
+                    type: string
+
+  # ============================================
+  # GAME EVENTS & REPLAY
+  # ============================================
+  /games/{gameId}/events:
+    get:
+      tags: [game-events]
+      summary: Get game event log
+      description: |
+        Returns all events for a game. Enables replay, cheat detection, AI training.
+      parameters:
+        - name: gameId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: after
+          in: query
+          description: Return events after this event ID (for pagination)
+          schema:
+            type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/GameEvent'
+
+  /games/{gameId}/replay:
+    get:
+      tags: [game-events]
+      summary: Get replay data
+      description: |
+        Returns complete replay data including initial state and all events.
+        Only available for finished games.
+      parameters:
+        - name: gameId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  game:
+                    $ref: '#/components/schemas/Game'
+                  initialState:
+                    type: object
+                    description: Game state at start (hands, tileBag, etc.)
+                  events:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/GameEvent'
+        '400':
+          description: Game not finished yet
+
+  # ============================================
+  # FRIENDS
+  # ============================================
+  /friends:
+    get:
+      tags: [friends]
+      summary: List friends
+      security:
+        - session: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Friend'
+
+  /friends/requests:
+    get:
+      tags: [friends]
+      summary: List pending friend requests
+      security:
+        - session: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/FriendRequest'
+
+  /friends/request:
+    post:
+      tags: [friends]
+      summary: Send friend request
+      security:
+        - session: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [userId]
+              properties:
+                userId:
+                  type: string
+      responses:
+        '201':
+          description: Request sent
+
+  /friends/{friendshipId}/accept:
+    post:
+      tags: [friends]
+      summary: Accept friend request
+      security:
+        - session: []
+      parameters:
+        - name: friendshipId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Friend added
+
+  /friends/{friendshipId}/reject:
+    post:
+      tags: [friends]
+      summary: Reject friend request
+      security:
+        - session: []
+      parameters:
+        - name: friendshipId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Request rejected
+
+  /friends/{userId}:
+    delete:
+      tags: [friends]
+      summary: Remove friend
+      security:
+        - session: []
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Friend removed
+
+  /friends/{userId}/invite:
+    post:
+      tags: [friends]
+      summary: Invite friend to your game
+      security:
+        - session: []
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [gameId]
+              properties:
+                gameId:
+                  type: string
+      responses:
+        '200':
+          description: Invite sent
+
+  # ============================================
+  # SHOP
+  # ============================================
+  /shop/chips:
+    get:
+      tags: [shop]
+      summary: List chip packages for purchase
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                    chips:
+                      type: integer
+                    price:
+                      type: number
+                    currency:
+                      type: string
+
+  /shop/chips/purchase:
+    post:
+      tags: [shop]
+      summary: Purchase chips
+      security:
+        - session: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [packageId]
+              properties:
+                packageId:
+                  type: string
+      responses:
+        '200':
+          description: Returns payment URL or confirms purchase
+
+  /shop/vip:
+    get:
+      tags: [shop]
+      summary: List VIP packages
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                    days:
+                      type: integer
+                    price:
+                      type: number
+                    benefits:
+                      type: array
+                      items:
+                        type: string
+
+  /shop/cosmetics:
+    get:
+      tags: [shop]
+      summary: List available cosmetics
+      parameters:
+        - name: type
+          in: query
+          schema:
+            type: string
+            enum: [avatar, tile_theme, table_theme]
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Cosmetic'
+
+  /shop/cosmetics/{cosmeticId}/purchase:
+    post:
+      tags: [shop]
+      summary: Purchase cosmetic with chips
+      security:
+        - session: []
+      parameters:
+        - name: cosmeticId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Cosmetic purchased
+        '400':
+          description: Not enough chips or already owned
+
+  # ============================================
+  # LEADERBOARD
+  # ============================================
+  /leaderboard:
+    get:
+      tags: [leaderboard]
+      summary: Get leaderboard
+      parameters:
+        - name: type
+          in: query
+          schema:
+            type: string
+            enum: [rating, wins, streak]
+            default: rating
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 100
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    rank:
+                      type: integer
+                    user:
+                      $ref: '#/components/schemas/UserPublic'
+                    value:
+                      type: integer
+
+  /achievements:
+    get:
+      tags: [leaderboard]
+      summary: List all achievements
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Achievement'
+
+  /users/me/achievements:
+    get:
+      tags: [leaderboard]
+      summary: Get current user's unlocked achievements
+      security:
+        - session: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UserAchievement'
+
+components:
+  securitySchemes:
+    session:
+      type: apiKey
+      in: cookie
+      name: next-auth.session-token
+
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        email:
+          type: string
+        phone:
+          type: string
+        image:
+          type: string
+        chips:
+          type: integer
+        rating:
+          type: integer
+        vipUntil:
+          type: string
+          format: date-time
+        locale:
+          type: string
+        avatarId:
+          type: string
+        tileThemeId:
+          type: string
+        tableThemeId:
+          type: string
+
+    UserPublic:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        image:
+          type: string
+        rating:
+          type: integer
+        isVip:
+          type: boolean
+
+    UserStats:
+      type: object
+      properties:
+        gamesPlayed:
+          type: integer
+        gamesWon:
+          type: integer
+        gamesLost:
+          type: integer
+        winStreak:
+          type: integer
+        bestWinStreak:
+          type: integer
+        totalScore:
+          type: integer
+        rank:
+          type: integer
+
+    Tile:
+      type: object
+      properties:
+        id:
+          type: string
+        number:
+          type: integer
+          minimum: 1
+          maximum: 13
+        color:
+          type: string
+          enum: [red, yellow, blue, black]
+        tileType:
+          type: string
+          enum: [normal, fake_okey]
+          description: |
+            - normal: Regular numbered tile
+            - fake_okey: Sahte okey (joker tile) - represents the real okey's value only, NOT a wildcard
+            Note: Whether a tile IS the real okey is determined dynamically (indicator + 1)
+
+    TileGroup:
+      type: object
+      properties:
+        type:
+          type: string
+          enum: [set, run]
+          description: |
+            - set (per): 3-4 tiles, same number, different colors
+            - run (seri): 3+ consecutive tiles, same color
+        tiles:
+          type: array
+          items:
+            $ref: '#/components/schemas/Tile'
+
+    GameRules:
+      type: object
+      description: Rule configuration for a game variant
+      properties:
+        variant:
+          type: string
+          enum: [okey, okey101]
+          default: okey
+        openingRequired:
+          type: boolean
+          default: false
+          description: Must open (show valid groups) before finishing
+        openingMinScore:
+          type: integer
+          default: 0
+          description: Minimum score to open (101 variant)
+        allowCift:
+          type: boolean
+          default: true
+          description: Allow çift (7 pairs) win
+        timeoutPolicy:
+          type: string
+          enum: [auto_discard_random, auto_discard_last_drawn, skip_turn]
+          default: auto_discard_random
+          description: What happens when turn times out
+
+    GameEvent:
+      type: object
+      description: Immutable game event for replay and audit
+      properties:
+        id:
+          type: string
+        gameId:
+          type: string
+        type:
+          type: string
+          enum:
+            - GAME_STARTED
+            - DRAW_PILE
+            - DRAW_DISCARD
+            - DISCARD
+            - FINISH
+            - TURN_TIMEOUT
+            - PLAYER_DISCONNECTED
+            - PLAYER_RECONNECTED
+        actorPlayerId:
+          type: string
+        payload:
+          type: object
+          description: Event-specific data (tile drawn, discarded, etc.)
+        createdAt:
+          type: string
+          format: date-time
+
+    Game:
+      type: object
+      properties:
+        id:
+          type: string
+        status:
+          type: string
+          enum: [WAITING, STARTING, PLAYING, FINISHED, CANCELLED]
+        mode:
+          type: string
+          enum: [regular, okey101]
+        maxPlayers:
+          type: integer
+        isPrivate:
+          type: boolean
+        roomCode:
+          type: string
+        players:
+          type: array
+          items:
+            $ref: '#/components/schemas/GamePlayer'
+        currentTurn:
+          type: integer
+        turnPhase:
+          type: string
+          enum: [draw, discard]
+        indicatorTile:
+          $ref: '#/components/schemas/Tile'
+        okeyTile:
+          $ref: '#/components/schemas/Tile'
+        discardPileTop:
+          $ref: '#/components/schemas/Tile'
+        tileBagCount:
+          type: integer
+        turnTimeLimit:
+          type: integer
+        turnStartedAt:
+          type: string
+          format: date-time
+        rules:
+          $ref: '#/components/schemas/GameRules'
+        stake:
+          type: object
+          properties:
+            entryFee:
+              type: integer
+            pot:
+              type: integer
+            potDistribution:
+              type: string
+        winnerId:
+          type: string
+        finishType:
+          type: string
+          enum: [normal, cift, el]
+          description: |
+            - normal: Standard finish
+            - cift: 7 pairs (2x score in 101)
+            - el: First turn win (no draw)
+
+    GameLobby:
+      type: object
+      description: Game info shown in lobby (no sensitive data)
+      properties:
+        id:
+          type: string
+        mode:
+          type: string
+        maxPlayers:
+          type: integer
+        currentPlayers:
+          type: integer
+        host:
+          $ref: '#/components/schemas/UserPublic'
+
+    GamePlayer:
+      type: object
+      properties:
+        id:
+          type: string
+        position:
+          type: integer
+        name:
+          type: string
+        avatar:
+          type: string
+        isAI:
+          type: boolean
+        isConnected:
+          type: boolean
+        isReady:
+          type: boolean
+        tileCount:
+          type: integer
+          description: Number of tiles (tiles themselves hidden for opponents)
+        tiles:
+          type: array
+          items:
+            $ref: '#/components/schemas/Tile'
+          description: Only included for the requesting player
+
+    Friend:
+      type: object
+      properties:
+        id:
+          type: string
+        user:
+          $ref: '#/components/schemas/UserPublic'
+        isOnline:
+          type: boolean
+        currentGameId:
+          type: string
+          description: If in a joinable game
+
+    FriendRequest:
+      type: object
+      properties:
+        id:
+          type: string
+        sender:
+          $ref: '#/components/schemas/UserPublic'
+        createdAt:
+          type: string
+          format: date-time
+
+    Cosmetic:
+      type: object
+      properties:
+        id:
+          type: string
+        type:
+          type: string
+          enum: [avatar, tile_theme, table_theme]
+        code:
+          type: string
+        name:
+          type: string
+        previewUrl:
+          type: string
+        price:
+          type: integer
+        isVipOnly:
+          type: boolean
+        isOwned:
+          type: boolean
+
+    Achievement:
+      type: object
+      properties:
+        id:
+          type: string
+        code:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        icon:
+          type: string
+        reward:
+          type: integer
+
+    UserAchievement:
+      type: object
+      properties:
+        achievement:
+          $ref: '#/components/schemas/Achievement'
+        unlockedAt:
+          type: string
+          format: date-time
+
+# ============================================
+# SOCKET.IO EVENTS (documentation only)
+# ============================================
+# See events.md for detailed Socket.io protocol
+#
+# Client -> Server:
+#   - join_game: { gameId }
+#   - leave_game: { gameId }
+#   - ready: { gameId }
+#   - draw: { gameId, source: 'pile' | 'discard' }
+#   - discard: { gameId, tileId }
+#   - finish: { gameId, discardTileId }
+#   - chat: { gameId, message }
+#   - ping: {} (heartbeat)
+#
+# Server -> Client:
+#   - game_state: Full game state update (on join/reconnect)
+#   - player_joined: { player }
+#   - player_left: { playerId }
+#   - player_ready: { playerId }
+#   - player_disconnected: { playerId }
+#   - player_reconnected: { playerId }
+#   - game_started: { game, yourTiles: Tile[] }
+#   - turn_changed: { currentTurn, turnPhase, turnStartedAt, timeRemaining }
+#   - turn_timeout: { playerId, action: 'auto_discard', tileId }
+#   - tile_drawn: { playerId, source, tile? (only if you drew), tileBagCount }
+#   - tile_discarded: { playerId, tile }
+#   - game_finished: { winnerId, finishType, scores, replay? }
+#   - chat_message: { playerId, message, timestamp }
+#   - game_invite: { fromUser, gameId, roomCode }
+#   - error: { code, message }
+#   - pong: {} (heartbeat response)
+#
+# Error Codes:
+#   - NOT_YOUR_TURN
+#   - WRONG_PHASE
+#   - TILE_NOT_FOUND
+#   - INVALID_HAND
+#   - GAME_FULL
+#   - GAME_STARTED
+#   - NOT_ENOUGH_CHIPS
+#   - DISCONNECTED

@@ -1,9 +1,19 @@
 "use client";
 
 import { useState } from "react";
+import { motion } from "framer-motion";
+import { useSession } from "next-auth/react";
+import { AuthModal, UserMenu } from "@/components/auth";
+import { Lobby } from "@/components/lobby";
+import { FriendsPanel } from "@/components/friends";
+import { ShopModal } from "@/components/shop";
 
 export default function Home() {
+  const { data: session, status } = useSession();
   const [lang, setLang] = useState<"tr" | "en">("tr");
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [authModalTab, setAuthModalTab] = useState<"login" | "register">("login");
+  const [showShopModal, setShowShopModal] = useState(false);
 
   const t = {
     tr: {
@@ -69,29 +79,52 @@ export default function Home() {
   const text = t[lang];
 
   return (
-    <div className="min-h-screen bg-stone-900">
+    <div className="min-h-screen bg-gradient-to-b from-amber-950 via-stone-900 to-stone-950">
+      {/* Ottoman pattern background */}
+      <div className="fixed inset-0 z-0 opacity-5 ottoman-pattern" />
+
+      {/* Warm ambient lighting */}
+      <div className="fixed inset-0 pointer-events-none z-0">
+        <div className="absolute top-0 left-1/4 w-96 h-96 bg-amber-500/10 rounded-full blur-3xl" />
+        <div className="absolute top-1/3 right-1/4 w-72 h-72 bg-red-500/10 rounded-full blur-3xl" />
+        <div className="absolute bottom-0 left-1/2 w-[800px] h-96 bg-amber-600/5 rounded-full blur-3xl" />
+      </div>
+
       {/* Hero Background Image */}
       <div className="fixed inset-0 z-0">
         <img
           src="/hero-okey.png"
           alt="Okey masası"
-          className="w-full h-full object-cover"
+          className="w-full h-full object-cover opacity-30"
         />
         {/* Dark overlay for readability */}
-        <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/50 to-stone-900" />
+        <div className="absolute inset-0 bg-gradient-to-b from-amber-950/80 via-stone-900/70 to-stone-950" />
       </div>
 
       {/* Header */}
-      <header className="relative z-10 flex items-center justify-between px-6 py-4">
-        <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-amber-500 text-xl font-bold text-red-950 shadow-lg">
-            ◆
+      <header className="relative z-10">
+        <div className="h-1 bg-gradient-to-r from-transparent via-amber-600 to-transparent" />
+        <div className="flex items-center justify-between px-6 py-4 backdrop-blur-sm bg-stone-900/50 border-b border-amber-600/20">
+        <motion.div
+          className="flex items-center gap-4"
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+        >
+          {/* Turkish tile logo */}
+          <div className="relative">
+            <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-amber-500 to-amber-700 border-2 border-amber-400 shadow-lg flex items-center justify-center">
+              <span className="text-2xl font-black text-amber-950">◆</span>
+            </div>
+            {/* Decorative corner */}
+            <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-600 rounded-full border border-red-400" />
           </div>
           <div>
-            <div className="text-xl font-bold text-amber-400">{text.brand}</div>
-            <div className="text-xs text-red-300">{text.tagline}</div>
+            <h1 className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-amber-200">
+              {text.brand}
+            </h1>
+            <p className="text-amber-600/80 text-sm font-medium">{text.tagline}</p>
           </div>
-        </div>
+        </motion.div>
         <div className="flex items-center gap-3">
           {/* Language Toggle */}
           <div className="flex rounded-lg bg-black/20 p-1">
@@ -117,14 +150,56 @@ export default function Home() {
             </button>
           </div>
           {/* Auth Buttons */}
-          <button className="rounded-lg border border-amber-500/30 px-4 py-2 text-sm font-medium text-amber-400 transition hover:bg-amber-500/10">
-            {text.login}
-          </button>
-          <button className="rounded-lg bg-amber-500 px-4 py-2 text-sm font-bold text-red-950 shadow-lg transition hover:bg-amber-400">
-            {text.register}
-          </button>
+          {status === "loading" ? (
+            <div className="w-32 h-10 bg-white/10 rounded-lg animate-pulse" />
+          ) : session ? (
+            <>
+              <button
+                onClick={() => setShowShopModal(true)}
+                className="rounded-lg bg-gradient-to-r from-amber-500/20 to-amber-600/20 border border-amber-500/30 px-4 py-2 text-sm font-medium text-amber-400 transition hover:bg-amber-500/30"
+              >
+                🛒 {lang === "tr" ? "Mağaza" : "Shop"}
+              </button>
+              <UserMenu />
+            </>
+          ) : (
+            <>
+              <button
+                onClick={() => {
+                  setAuthModalTab("login");
+                  setShowAuthModal(true);
+                }}
+                className="rounded-lg border border-amber-500/30 px-4 py-2 text-sm font-medium text-amber-400 transition hover:bg-amber-500/10"
+              >
+                {text.login}
+              </button>
+              <button
+                onClick={() => {
+                  setAuthModalTab("register");
+                  setShowAuthModal(true);
+                }}
+                className="rounded-lg bg-amber-500 px-4 py-2 text-sm font-bold text-red-950 shadow-lg transition hover:bg-amber-400"
+              >
+                {text.register}
+              </button>
+            </>
+          )}
+        </div>
         </div>
       </header>
+
+      {/* Auth Modal */}
+      <AuthModal
+        isOpen={showAuthModal}
+        onClose={() => setShowAuthModal(false)}
+        defaultTab={authModalTab}
+      />
+
+      {/* Shop Modal */}
+      <ShopModal
+        isOpen={showShopModal}
+        onClose={() => setShowShopModal(false)}
+      />
 
       {/* Hero Section */}
       <main className="relative z-10 flex flex-col items-center px-6 py-12 text-center">
@@ -201,6 +276,22 @@ export default function Home() {
             <span className="text-2xl font-black text-amber-400">1,247</span> {text.playersOnline}
           </span>
         </div>
+
+        {/* Lobby and Friends for authenticated users */}
+        {session && (
+          <div className="mt-12 w-full max-w-4xl">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Lobby - takes 2 columns on large screens */}
+              <div className="lg:col-span-2 rounded-2xl bg-black/40 border border-white/10 p-6 backdrop-blur">
+                <Lobby />
+              </div>
+              {/* Friends panel - takes 1 column */}
+              <div className="lg:col-span-1">
+                <FriendsPanel />
+              </div>
+            </div>
+          </div>
+        )}
       </main>
 
       {/* Features Section */}
@@ -271,7 +362,13 @@ export default function Home() {
               ? "Hemen üye ol, ilk oyununda 1000 chip hediye!"
               : "Sign up now, get 1000 free chips on your first game!"}
           </p>
-          <button className="rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 px-12 py-4 text-xl font-black text-red-950 shadow-2xl transition hover:from-amber-400 hover:to-amber-500 hover:scale-105">
+          <button
+            onClick={() => {
+              setAuthModalTab("register");
+              setShowAuthModal(true);
+            }}
+            className="rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 px-12 py-4 text-xl font-black text-red-950 shadow-2xl transition hover:from-amber-400 hover:to-amber-500 hover:scale-105"
+          >
             {text.register}
           </button>
         </div>
