@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { useSession } from "next-auth/react";
 import { AuthModal, UserMenu } from "@/components/auth";
@@ -9,11 +10,22 @@ import { FriendsPanel } from "@/components/friends";
 import { ShopModal } from "@/components/shop";
 
 export default function Home() {
+  const router = useRouter();
   const { data: session, status } = useSession();
   const [lang, setLang] = useState<"tr" | "en">("tr");
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authModalTab, setAuthModalTab] = useState<"login" | "register">("login");
   const [showShopModal, setShowShopModal] = useState(false);
+
+  // Handle play button click - require authentication
+  const handlePlay = (mode: "regular" | "okey101") => {
+    if (!session) {
+      setAuthModalTab("login");
+      setShowAuthModal(true);
+      return;
+    }
+    router.push(`/play?mode=${mode}`);
+  };
 
   const t = {
     tr: {
@@ -240,20 +252,20 @@ export default function Home() {
 
         {/* Game Mode Selection */}
         <div className="flex flex-col gap-4 sm:flex-row mb-8">
-          <a
-            href="/play?mode=regular"
+          <button
+            onClick={() => handlePlay("regular")}
             className="group flex items-center justify-center gap-3 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 px-10 py-5 text-xl font-black text-red-950 shadow-2xl transition hover:from-amber-400 hover:to-amber-500 hover:scale-105"
           >
             <span className="text-2xl transition group-hover:scale-125">▶</span>
             {lang === "tr" ? "Normal Okey" : "Regular Okey"}
-          </a>
-          <a
-            href="/play?mode=okey101"
+          </button>
+          <button
+            onClick={() => handlePlay("okey101")}
             className="group flex items-center justify-center gap-3 rounded-xl bg-gradient-to-r from-red-600 to-red-700 px-10 py-5 text-xl font-black text-white shadow-2xl transition hover:from-red-500 hover:to-red-600 hover:scale-105"
           >
             <span className="text-2xl transition group-hover:scale-125">▶</span>
             101 Okey
-          </a>
+          </button>
         </div>
 
         {/* Action Buttons */}
