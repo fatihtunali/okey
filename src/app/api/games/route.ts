@@ -46,15 +46,16 @@ export async function GET(request: NextRequest) {
     });
 
     // Transform to lobby format
-    const lobbyGames = games.map((game) => {
-      const host = game.players.find((p) => p.position === 0);
+    type PlayerWithUser = { position: number; isAI: boolean; user: { id: string; name: string | null; image: string | null; rating: number; vipUntil: Date | null } | null };
+    const lobbyGames = games.map((game: { id: string; maxPlayers: number; players: PlayerWithUser[] }) => {
+      const host = game.players.find((p: PlayerWithUser) => p.position === 0);
       const hostUser = host?.user;
 
       return {
         id: game.id,
         mode: 'regular', // TODO: Add mode to Game model
         maxPlayers: game.maxPlayers,
-        currentPlayers: game.players.filter((p) => !p.isAI).length,
+        currentPlayers: game.players.filter((p: PlayerWithUser) => !p.isAI).length,
         host: hostUser
           ? {
               id: hostUser.id,

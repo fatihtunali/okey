@@ -52,7 +52,8 @@ export async function POST(
     }
 
     // Find current player
-    const currentPlayer = game.players.find((p) => p.position === game.currentTurn);
+    type GamePlayerType = { position: number; userId: string | null; tiles: unknown };
+    const currentPlayer = game.players.find((p: GamePlayerType) => p.position === game.currentTurn);
     if (!currentPlayer) {
       return NextResponse.json(
         { error: 'Oyuncu bulunamadı' },

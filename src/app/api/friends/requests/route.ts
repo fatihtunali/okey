@@ -35,7 +35,9 @@ export async function GET() {
     });
 
     // Transform to friend request format
-    const friendRequests = requests.map((r) => ({
+    type SenderType = { id: string; name: string | null; image: string | null; rating: number; vipUntil: Date | null };
+    type RequestType = { id: string; sender: SenderType; createdAt: Date };
+    const friendRequests = requests.map((r: RequestType) => ({
       id: r.id,
       sender: {
         id: r.sender.id,

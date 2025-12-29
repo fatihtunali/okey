@@ -41,7 +41,8 @@ export async function POST(
     }
 
     // Find player
-    const player = game.players.find((p) => p.userId === session.user.id);
+    type GamePlayerType = { id: string; userId: string | null; isReady: boolean; isAI: boolean };
+    const player = game.players.find((p: GamePlayerType) => p.userId === session.user.id);
     if (!player) {
       return NextResponse.json(
         { error: 'Bu oyunda değilsiniz' },
@@ -62,8 +63,8 @@ export async function POST(
       include: { players: true },
     });
 
-    const humanPlayers = updatedGame?.players.filter((p) => !p.isAI) || [];
-    const allReady = humanPlayers.every((p) =>
+    const humanPlayers = updatedGame?.players.filter((p: GamePlayerType) => !p.isAI) || [];
+    const allReady = humanPlayers.every((p: GamePlayerType) =>
       p.id === player.id ? newReadyStatus : p.isReady
     );
 

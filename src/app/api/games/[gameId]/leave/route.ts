@@ -34,7 +34,8 @@ export async function POST(
     }
 
     // Find player
-    const player = game.players.find((p) => p.userId === session.user.id);
+    type GamePlayerType = { id: string; userId: string | null; position: number; isAI: boolean };
+    const player = game.players.find((p: GamePlayerType) => p.userId === session.user.id);
     if (!player) {
       return NextResponse.json(
         { error: 'Bu oyunda değilsiniz' },
@@ -58,7 +59,7 @@ export async function POST(
     // If host left, cancel the game or transfer ownership
     const isHost = player.position === 0;
     const remainingPlayers = game.players.filter(
-      (p) => p.id !== player.id && !p.isAI
+      (p: GamePlayerType) => p.id !== player.id && !p.isAI
     );
 
     if (isHost && remainingPlayers.length === 0) {

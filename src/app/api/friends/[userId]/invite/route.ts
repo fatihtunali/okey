@@ -68,7 +68,7 @@ export async function POST(
     }
 
     const isPlayerInGame = game.players.some(
-      (p) => p.userId === session.user.id
+      (p: { userId: string | null }) => p.userId === session.user.id
     );
     if (!isPlayerInGame) {
       return NextResponse.json(
@@ -85,7 +85,7 @@ export async function POST(
     }
 
     // Check if friend is already in game
-    const friendInGame = game.players.some((p) => p.userId === userId);
+    const friendInGame = game.players.some((p: { userId: string | null }) => p.userId === userId);
     if (friendInGame) {
       return NextResponse.json(
         { error: 'Arkadaşınız zaten oyunda' },

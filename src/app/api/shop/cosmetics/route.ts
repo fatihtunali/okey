@@ -44,13 +44,14 @@ export async function GET(request: NextRequest) {
         select: { itemId: true },
       });
 
-      purchases.forEach((p) => {
+      purchases.forEach((p: { itemId: string | null }) => {
         if (p.itemId) ownedCosmeticIds.add(p.itemId);
       });
     }
 
     // Transform to response format
-    const response = cosmetics.map((c) => ({
+    type CosmeticType = { id: string; type: string; code: string; nameKey: string; previewUrl: string | null; price: number; isVipOnly: boolean };
+    const response = cosmetics.map((c: CosmeticType) => ({
       id: c.id,
       type: c.type,
       code: c.code,

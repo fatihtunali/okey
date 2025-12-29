@@ -47,7 +47,8 @@ export async function POST(
     }
 
     // Find player
-    const player = game.players.find((p) => p.userId === session.user.id);
+    type GamePlayerType = { userId: string | null; tiles: unknown };
+    const player = game.players.find((p: GamePlayerType) => p.userId === session.user.id);
     if (!player) {
       return NextResponse.json(
         { error: 'Bu oyunda değilsiniz' },
@@ -69,7 +70,7 @@ export async function POST(
     // Find discard tile if specified
     let discardTile: Tile | undefined;
     if (discardTileId) {
-      discardTile = playerTiles.find((t) => t.id === discardTileId);
+      discardTile = playerTiles.find((t: Tile) => t.id === discardTileId);
     }
 
     // Validate the hand

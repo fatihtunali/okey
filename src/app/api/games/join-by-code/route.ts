@@ -50,8 +50,9 @@ export async function POST(request: Request) {
     }
 
     // Check if already in game
+    type GamePlayer = { userId: string | null; isAI: boolean; position: number };
     const existingPlayer = game.players.find(
-      (p) => p.userId === session.user.id
+      (p: GamePlayer) => p.userId === session.user.id
     );
     if (existingPlayer) {
       return NextResponse.json({
@@ -62,7 +63,7 @@ export async function POST(request: Request) {
     }
 
     // Check if game is full
-    const humanPlayers = game.players.filter((p) => !p.isAI);
+    const humanPlayers = game.players.filter((p: GamePlayer) => !p.isAI);
     if (humanPlayers.length >= game.maxPlayers) {
       return NextResponse.json(
         { error: 'Oyun dolu' },
@@ -71,7 +72,7 @@ export async function POST(request: Request) {
     }
 
     // Find next available position
-    const takenPositions = new Set(game.players.map((p) => p.position));
+    const takenPositions = new Set(game.players.map((p: GamePlayer) => p.position));
     let nextPosition = 0;
     while (takenPositions.has(nextPosition)) {
       nextPosition++;

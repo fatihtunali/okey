@@ -46,7 +46,9 @@ export async function GET() {
     });
 
     // Transform to friend list
-    const friends = friendships.map((f) => {
+    type FriendUserType = { id: string; name: string | null; image: string | null; rating: number; vipUntil: Date | null };
+    type FriendshipType = { id: string; senderId: string; sender: FriendUserType; receiver: FriendUserType };
+    const friends = friendships.map((f: FriendshipType) => {
       const friend = f.senderId === session.user.id ? f.receiver : f.sender;
       return {
         id: f.id,

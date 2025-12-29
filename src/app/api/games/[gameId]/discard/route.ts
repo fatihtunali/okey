@@ -59,7 +59,8 @@ export async function POST(
     }
 
     // Find current player
-    const currentPlayer = game.players.find((p) => p.position === game.currentTurn);
+    type GamePlayerType = { position: number; userId: string | null; tiles: unknown };
+    const currentPlayer = game.players.find((p: GamePlayerType) => p.position === game.currentTurn);
     if (!currentPlayer) {
       return NextResponse.json(
         { error: 'Oyuncu bulunamadı' },
@@ -79,7 +80,7 @@ export async function POST(
     const discardPile = (game.discardPile as unknown as Tile[]) || [];
 
     // Find the tile to discard
-    const tileIndex = playerTiles.findIndex((t) => t.id === tileId);
+    const tileIndex = playerTiles.findIndex((t: Tile) => t.id === tileId);
     if (tileIndex === -1) {
       return NextResponse.json(
         { error: 'Taş elinizde bulunamadı' },
