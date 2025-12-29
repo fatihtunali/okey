@@ -39,7 +39,8 @@ export async function GET(
     }
 
     // Transform players - hide tiles from other players
-    const players = game.players.map((player) => {
+    type GamePlayerType = { id: string; position: number; isAI: boolean; isConnected: boolean; isReady: boolean; userId: string | null; tiles: unknown; user: { id: string; name: string | null; image: string | null; rating: number; vipUntil: Date | null } | null };
+    const players = game.players.map((player: GamePlayerType) => {
       const isCurrentUser = session?.user?.id && player.userId === session.user.id;
       const tiles = player.tiles as unknown[] | null;
 
