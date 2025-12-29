@@ -9,7 +9,7 @@ export async function GET() {
     });
 
     // Transform to response format
-    const response = achievements.map((a) => ({
+    const response = achievements.map((a: { id: string; code: string; nameKey: string; descKey: string; icon: string; reward: number }) => ({
       id: a.id,
       code: a.code,
       name: a.nameKey, // In production, translate based on locale
