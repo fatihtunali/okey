@@ -9,8 +9,7 @@ import type { GameState, Tile as TileType } from '@/lib/game/types';
 
 // ============================================
 // TURKISH GAME BOARD - Kahvehane Experience
-// Authentic Turkish coffeehouse atmosphere with
-// felt table, brass accents, and warm lighting
+// Mobile-responsive design with CSS Grid layout
 // ============================================
 
 interface GameBoardProps {
@@ -52,16 +51,16 @@ export const TurkishGameBoard = memo(function TurkishGameBoard({
 
   // Calculate opponent positions (relative to current player)
   const opponents = useMemo(() => {
-    const positions: ('top' | 'left' | 'right')[] = ['top', 'left', 'right'];
+    const positions: ('top' | 'left' | 'right')[] = ['left', 'top', 'right'];
     const result: { player: typeof game.players[0]; position: 'top' | 'left' | 'right' }[] = [];
 
     let posIndex = 0;
-    for (let i = 0; i < game.players.length; i++) {
-      const playerIndex = (currentPlayerIndex + 1 + i) % game.players.length;
-      if (playerIndex !== currentPlayerIndex) {
+    for (let i = 1; i < game.players.length; i++) {
+      const playerIndex = (currentPlayerIndex + i) % game.players.length;
+      if (playerIndex !== currentPlayerIndex && posIndex < 3) {
         result.push({
           player: game.players[playerIndex],
-          position: positions[posIndex] || 'top',
+          position: positions[posIndex],
         });
         posIndex++;
       }
@@ -89,17 +88,14 @@ export const TurkishGameBoard = memo(function TurkishGameBoard({
   const rightOpponent = getOpponent('right');
 
   return (
-    <div className="relative w-full min-h-[700px] flex flex-col">
-      {/* Ambient lighting overlay */}
-      <div className="absolute inset-0 bg-gradient-to-b from-amber-900/20 via-transparent to-amber-900/30 pointer-events-none z-10" />
-
+    <div className="w-full h-full min-h-screen bg-gradient-to-b from-emerald-950 via-emerald-900 to-emerald-950 flex flex-col overflow-hidden">
       {/* ============================================
           TIMER BAR - Top of screen
           ============================================ */}
-      <div className="relative h-2 bg-stone-900/80 rounded-full overflow-hidden mx-4 mt-2 mb-4">
+      <div className="h-1.5 sm:h-2 bg-stone-900/80 flex-shrink-0">
         <motion.div
           className={cn(
-            'absolute inset-y-0 left-0 rounded-full',
+            'h-full rounded-r-full',
             isTimeCritical
               ? 'bg-gradient-to-r from-red-600 to-red-400'
               : isTimeLow
@@ -110,49 +106,18 @@ export const TurkishGameBoard = memo(function TurkishGameBoard({
           animate={{ width: `${timerPercentage}%` }}
           transition={{ duration: 0.5 }}
         />
-        {/* Timer text */}
-        <div className="absolute inset-0 flex items-center justify-center">
-          <span
-            className={cn(
-              'text-xs font-bold',
-              isTimeCritical ? 'text-red-300' : 'text-white/80'
-            )}
-          >
-            {isMyTurn ? `${timeRemaining}s` : ''}
-          </span>
-        </div>
       </div>
 
       {/* ============================================
-          MAIN GAME TABLE
+          MAIN GAME AREA - CSS Grid Layout
           ============================================ */}
-      <div className="flex-1 relative px-4">
-        {/* Felt table surface */}
-        <div
-          className={cn(
-            'absolute inset-4 rounded-3xl overflow-hidden',
-            'bg-gradient-to-br from-emerald-900 via-emerald-800 to-emerald-950',
-            'border-8 border-amber-800',
-            'shadow-2xl'
-          )}
-        >
-          {/* Inner border - brass rim */}
-          <div className="absolute inset-0 rounded-2xl border-4 border-amber-600/30" />
-
-          {/* Felt texture */}
-          <div className="absolute inset-0 felt-texture opacity-50" />
-
-          {/* Subtle pattern overlay */}
-          <div className="absolute inset-0 ottoman-pattern opacity-10" />
-        </div>
+      <div className="flex-1 grid grid-rows-[auto_1fr_auto] p-1.5 sm:p-3 md:p-4 gap-1.5 sm:gap-3 overflow-hidden">
 
         {/* ============================================
-            OPPONENT POSITIONS
+            TOP OPPONENT ROW
             ============================================ */}
-
-        {/* Top opponent */}
-        {topOpponent && (
-          <div className="absolute top-8 left-1/2 -translate-x-1/2 z-20">
+        <div className="flex justify-center">
+          {topOpponent && (
             <TurkishOpponentRack
               tileCount={topOpponent.player.tiles.length}
               playerName={topOpponent.player.name}
@@ -165,187 +130,224 @@ export const TurkishGameBoard = memo(function TurkishGameBoard({
                   : undefined
               }
             />
-          </div>
-        )}
-
-        {/* Left opponent */}
-        {leftOpponent && (
-          <div className="absolute left-8 top-1/2 -translate-y-1/2 z-20">
-            <TurkishOpponentRack
-              tileCount={leftOpponent.player.tiles.length}
-              playerName={leftOpponent.player.name}
-              isCurrentTurn={game.currentTurn === game.players.indexOf(leftOpponent.player)}
-              isAI={leftOpponent.player.isAI}
-              position="left"
-              thinkingText={
-                isProcessingAI && game.currentTurn === game.players.indexOf(leftOpponent.player)
-                  ? 'Düşünüyor...'
-                  : undefined
-              }
-            />
-          </div>
-        )}
-
-        {/* Right opponent */}
-        {rightOpponent && (
-          <div className="absolute right-8 top-1/2 -translate-y-1/2 z-20">
-            <TurkishOpponentRack
-              tileCount={rightOpponent.player.tiles.length}
-              playerName={rightOpponent.player.name}
-              isCurrentTurn={game.currentTurn === game.players.indexOf(rightOpponent.player)}
-              isAI={rightOpponent.player.isAI}
-              position="right"
-              thinkingText={
-                isProcessingAI && game.currentTurn === game.players.indexOf(rightOpponent.player)
-                  ? 'Düşünüyor...'
-                  : undefined
-              }
-            />
-          </div>
-        )}
-
-        {/* ============================================
-            CENTER TABLE - Draw pile, Indicator, Discard
-            ============================================ */}
-        <div className="absolute inset-0 flex items-center justify-center z-10">
-          <div className="flex items-center gap-8">
-            {/* Draw pile */}
-            <TileStack
-              count={game.tileBag.length}
-              size="lg"
-              onClick={onDrawFromPile}
-              canClick={canDraw}
-            />
-
-            {/* Indicator tile */}
-            {game.indicatorTile && game.okeyTile && (
-              <IndicatorTile
-                tile={game.indicatorTile}
-                okeyTile={game.okeyTile}
-              />
-            )}
-
-            {/* Discard pile */}
-            <DiscardPile
-              tiles={game.discardPile}
-              okeyTile={game.okeyTile}
-              onClickTop={onDrawFromDiscard}
-              canClickTop={canDraw && game.discardPile.length > 0}
-            />
-          </div>
-        </div>
-
-        {/* ============================================
-            TURKISH TEA DECORATION (Atmosphere)
-            ============================================ */}
-        <div className="absolute bottom-8 right-8 z-0 opacity-40 pointer-events-none">
-          <div className="relative">
-            {/* Tea glass */}
-            <div className="w-6 h-10 bg-gradient-to-b from-amber-600/60 to-amber-800/60 rounded-b-lg border-2 border-amber-500/30" />
-            {/* Tea saucer */}
-            <div className="w-10 h-2 bg-amber-700/40 rounded-full -mt-1 mx-auto" />
-            {/* Steam effect */}
-            <div className="absolute -top-4 left-1/2 -translate-x-1/2 text-white/30 tea-steam">~</div>
-          </div>
-        </div>
-      </div>
-
-      {/* ============================================
-          ACTION BUTTONS & PLAYER RACK (Bottom)
-          ============================================ */}
-      <div className="relative z-20 px-4 pb-4 space-y-4">
-        {/* Turn indicator and action buttons */}
-        <div className="flex items-center justify-center gap-4">
-          {/* Turn indicator */}
-          <AnimatePresence mode="wait">
-            {isMyTurn && (
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                className={cn(
-                  'px-4 py-2 rounded-full font-bold',
-                  'bg-gradient-to-r from-green-600 to-green-500',
-                  'text-white shadow-lg',
-                  'border-2 border-green-400'
-                )}
-              >
-                {game.turnPhase === 'draw' ? '🃏 Taş Çekin' : '📤 Taş Atın'}
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          {/* Discard button */}
-          <motion.button
-            onClick={onDiscard}
-            disabled={!canDiscard}
-            className={cn(
-              'px-6 py-3 rounded-xl font-bold text-lg',
-              'transition-all duration-200',
-              canDiscard
-                ? 'bg-gradient-to-r from-red-600 to-red-500 text-white shadow-lg hover:shadow-xl hover:scale-105 border-2 border-red-400'
-                : 'bg-stone-700 text-stone-400 cursor-not-allowed border-2 border-stone-600'
-            )}
-            whileHover={canDiscard ? { scale: 1.05 } : {}}
-            whileTap={canDiscard ? { scale: 0.95 } : {}}
-          >
-            TAŞI AT
-          </motion.button>
-
-          {/* Win button */}
-          <motion.button
-            onClick={onDeclareWin}
-            disabled={!canDiscard}
-            className={cn(
-              'px-6 py-3 rounded-xl font-bold text-lg',
-              'transition-all duration-200',
-              canDiscard
-                ? 'bg-gradient-to-r from-amber-600 to-amber-500 text-white shadow-lg hover:shadow-xl hover:scale-105 border-2 border-amber-400'
-                : 'bg-stone-700 text-stone-400 cursor-not-allowed border-2 border-stone-600'
-            )}
-            whileHover={canDiscard ? { scale: 1.05 } : {}}
-            whileTap={canDiscard ? { scale: 0.95 } : {}}
-          >
-            BİTİR
-          </motion.button>
-        </div>
-
-        {/* Player info bar */}
-        <div className="flex items-center justify-center gap-4">
-          {/* Avatar and name */}
-          <div className="flex items-center gap-3 px-4 py-2 bg-stone-900/80 rounded-xl backdrop-blur-sm border border-amber-600/30">
-            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-amber-500 to-amber-700 flex items-center justify-center text-white font-bold border-2 border-amber-400">
-              {currentPlayer?.name?.[0]?.toUpperCase() || '?'}
-            </div>
-            <div>
-              <div className="text-amber-200 font-medium">{currentPlayer?.name}</div>
-              <div className="text-amber-400/70 text-sm">{currentPlayer?.tiles.length} taş</div>
-            </div>
-          </div>
-
-          {/* Okey info badge */}
-          {game.okeyTile && (
-            <div className="flex items-center gap-2 px-4 py-2 bg-stone-900/80 rounded-xl backdrop-blur-sm border border-amber-600/30">
-              <span className="text-amber-300 text-sm">Okey:</span>
-              <TurkishTile tile={game.okeyTile} size="sm" />
-            </div>
           )}
         </div>
 
-        {/* Player's rack */}
-        <TurkishPlayerRack
-          tiles={currentPlayer?.tiles || []}
-          rackLayout={rackLayout}
-          okeyTile={game.okeyTile}
-          selectedTileId={selectedTileId}
-          onTileSelect={onTileSelect}
-          onTileMove={onTileMove}
-          onSortByGroups={onSortByGroups}
-          onSortByRuns={onSortByRuns}
-          isCurrentPlayer={isMyTurn}
-          canSelect={game.turnPhase === 'discard'}
-          canRearrange={true}
-        />
+        {/* ============================================
+            MIDDLE ROW: Left - Center Table - Right
+            ============================================ */}
+        <div className="flex items-center justify-center gap-1.5 sm:gap-3 md:gap-4">
+          {/* Left opponent */}
+          <div className="flex-shrink-0">
+            {leftOpponent && (
+              <TurkishOpponentRack
+                tileCount={leftOpponent.player.tiles.length}
+                playerName={leftOpponent.player.name}
+                isCurrentTurn={game.currentTurn === game.players.indexOf(leftOpponent.player)}
+                isAI={leftOpponent.player.isAI}
+                position="left"
+                thinkingText={
+                  isProcessingAI && game.currentTurn === game.players.indexOf(leftOpponent.player)
+                    ? 'Düşünüyor...'
+                    : undefined
+                }
+              />
+            )}
+          </div>
+
+          {/* Center table */}
+          <div className={cn(
+            'relative rounded-lg sm:rounded-xl md:rounded-2xl p-2 sm:p-4 md:p-6',
+            'bg-gradient-to-b from-green-800 via-green-900 to-green-950',
+            'border-2 sm:border-3 md:border-4 border-amber-700',
+            'shadow-xl',
+            'flex-shrink-0'
+          )}>
+            {/* Felt texture */}
+            <div className="absolute inset-0 felt-texture opacity-30 rounded-lg sm:rounded-xl md:rounded-2xl" />
+
+            {/* Table items */}
+            <div className="relative flex items-start justify-center gap-2 sm:gap-4 md:gap-6">
+              {/* Draw pile */}
+              <div className="flex flex-col items-center">
+                <div className="text-[7px] sm:text-[9px] md:text-xs text-amber-400 font-bold mb-0.5 sm:mb-1">DESTE</div>
+                <div className="scale-[0.6] sm:scale-75 md:scale-100 origin-top">
+                  <TileStack
+                    count={game.tileBag.length}
+                    size="md"
+                    onClick={onDrawFromPile}
+                    canClick={canDraw}
+                  />
+                </div>
+              </div>
+
+              {/* Indicator tile */}
+              {game.indicatorTile && game.okeyTile && (
+                <div className="scale-[0.6] sm:scale-75 md:scale-100 origin-top">
+                  <IndicatorTile
+                    tile={game.indicatorTile}
+                    okeyTile={game.okeyTile}
+                  />
+                </div>
+              )}
+
+              {/* Discard pile */}
+              <div className="scale-[0.6] sm:scale-75 md:scale-100 origin-top">
+                <DiscardPile
+                  tiles={game.discardPile}
+                  okeyTile={game.okeyTile}
+                  onClickTop={onDrawFromDiscard}
+                  canClickTop={canDraw && game.discardPile.length > 0}
+                />
+              </div>
+            </div>
+
+            {/* Draw hint */}
+            {canDraw && (
+              <div className="absolute -bottom-2 sm:-bottom-3 left-1/2 -translate-x-1/2 whitespace-nowrap">
+                <div className="bg-green-500 text-green-950 px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-[8px] sm:text-[10px] md:text-xs font-bold animate-bounce">
+                  Taş Çek!
+                </div>
+              </div>
+            )}
+
+            {/* AI thinking indicator */}
+            {isProcessingAI && !isMyTurn && (
+              <div className="absolute -bottom-2 sm:-bottom-3 left-1/2 -translate-x-1/2 whitespace-nowrap">
+                <div className="bg-amber-500 text-amber-950 px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-[8px] sm:text-[10px] md:text-xs font-bold animate-pulse">
+                  Rakip düşünüyor...
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Right opponent */}
+          <div className="flex-shrink-0">
+            {rightOpponent && (
+              <TurkishOpponentRack
+                tileCount={rightOpponent.player.tiles.length}
+                playerName={rightOpponent.player.name}
+                isCurrentTurn={game.currentTurn === game.players.indexOf(rightOpponent.player)}
+                isAI={rightOpponent.player.isAI}
+                position="right"
+                thinkingText={
+                  isProcessingAI && game.currentTurn === game.players.indexOf(rightOpponent.player)
+                    ? 'Düşünüyor...'
+                    : undefined
+                }
+              />
+            )}
+          </div>
+        </div>
+
+        {/* ============================================
+            BOTTOM - Current player area
+            ============================================ */}
+        <div className="flex flex-col gap-1.5 sm:gap-2 md:gap-3">
+          {/* Action buttons */}
+          <div className="flex justify-center gap-1.5 sm:gap-3 md:gap-4">
+            {canDraw && (
+              <button
+                onClick={onDrawFromPile}
+                className={cn(
+                  'px-3 sm:px-6 md:px-8 py-1.5 sm:py-2 md:py-3 rounded-lg sm:rounded-xl font-bold text-xs sm:text-sm md:text-lg',
+                  'bg-gradient-to-b from-green-500 to-green-700',
+                  'hover:from-green-400 hover:to-green-600',
+                  'text-white border sm:border-2 border-green-400',
+                  'transition-all hover:scale-105 active:scale-95',
+                  'shadow-lg'
+                )}
+              >
+                Taş Çek
+              </button>
+            )}
+            {canDiscard && (
+              <button
+                onClick={onDiscard}
+                className={cn(
+                  'px-3 sm:px-6 md:px-8 py-1.5 sm:py-2 md:py-3 rounded-lg sm:rounded-xl font-bold text-xs sm:text-sm md:text-lg',
+                  'bg-gradient-to-b from-red-500 to-red-700',
+                  'hover:from-red-400 hover:to-red-600',
+                  'text-white border sm:border-2 border-red-400',
+                  'transition-all hover:scale-105 active:scale-95',
+                  'shadow-lg'
+                )}
+              >
+                TAŞI AT
+              </button>
+            )}
+            {canDiscard && currentPlayer && currentPlayer.tiles.length === 15 && (
+              <button
+                onClick={onDeclareWin}
+                className={cn(
+                  'px-3 sm:px-6 md:px-8 py-1.5 sm:py-2 md:py-3 rounded-lg sm:rounded-xl font-bold text-xs sm:text-sm md:text-lg',
+                  'bg-gradient-to-b from-amber-500 to-amber-700',
+                  'hover:from-amber-400 hover:to-amber-600',
+                  'text-white border sm:border-2 border-amber-400',
+                  'transition-all hover:scale-105 active:scale-95',
+                  'shadow-lg animate-pulse'
+                )}
+              >
+                BİTİR!
+              </button>
+            )}
+          </div>
+
+          {/* Player info bar */}
+          {currentPlayer && (
+            <div className="flex justify-center">
+              <div className="flex items-center gap-1.5 sm:gap-3 md:gap-4 bg-stone-900/80 rounded-lg sm:rounded-xl px-2 sm:px-4 md:px-6 py-1.5 sm:py-2 md:py-3 border border-amber-600/30 backdrop-blur-sm">
+                <div className="w-6 h-6 sm:w-8 sm:h-8 md:w-10 md:h-10 rounded-full bg-gradient-to-br from-amber-500 to-amber-700 flex items-center justify-center text-white font-bold text-xs sm:text-sm md:text-base border sm:border-2 border-amber-400">
+                  {currentPlayer.name?.[0]?.toUpperCase() || '?'}
+                </div>
+                <div>
+                  <div className="text-amber-200 font-medium text-xs sm:text-sm md:text-base">{currentPlayer.name}</div>
+                  <div className={cn(
+                    'text-[10px] sm:text-xs md:text-sm font-bold',
+                    isMyTurn ? 'text-green-400' : 'text-amber-400/70'
+                  )}>
+                    {isMyTurn ? (canDraw ? 'Taş çek!' : 'Taş at!') : `${currentPlayer.tiles.length} taş`}
+                  </div>
+                </div>
+                {game.okeyTile && (
+                  <div className="flex items-center gap-1 bg-stone-800/80 text-amber-400 text-[10px] sm:text-xs md:text-sm font-bold px-1.5 sm:px-2 md:px-3 py-0.5 sm:py-1 rounded-md sm:rounded-lg">
+                    <span>Okey:</span>
+                    <span className={cn(
+                      'font-black',
+                      game.okeyTile.color === 'red' && 'text-red-500',
+                      game.okeyTile.color === 'blue' && 'text-blue-500',
+                      game.okeyTile.color === 'yellow' && 'text-amber-500',
+                      game.okeyTile.color === 'black' && 'text-gray-300',
+                    )}>
+                      {game.okeyTile.number}
+                    </span>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Player's rack */}
+          {currentPlayer && (
+            <div className="flex justify-center overflow-x-auto pb-1 sm:pb-2">
+              <div className="transform scale-[0.55] sm:scale-75 md:scale-90 lg:scale-100 origin-top">
+                <TurkishPlayerRack
+                  tiles={currentPlayer.tiles}
+                  rackLayout={rackLayout}
+                  okeyTile={game.okeyTile}
+                  selectedTileId={selectedTileId}
+                  onTileSelect={onTileSelect}
+                  onTileMove={onTileMove}
+                  onSortByGroups={onSortByGroups}
+                  onSortByRuns={onSortByRuns}
+                  isCurrentPlayer={isMyTurn}
+                  canSelect={game.turnPhase === 'discard'}
+                  canRearrange={true}
+                />
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* ============================================
@@ -359,14 +361,14 @@ export const TurkishGameBoard = memo(function TurkishGameBoard({
             exit={{ opacity: 0 }}
             className="absolute inset-0 bg-black/20 flex items-center justify-center z-30 pointer-events-none"
           >
-            <div className="bg-stone-900/90 backdrop-blur-sm px-6 py-4 rounded-2xl border border-amber-500/30">
-              <div className="flex items-center gap-3">
+            <div className="bg-stone-900/90 backdrop-blur-sm px-4 sm:px-6 py-3 sm:py-4 rounded-xl sm:rounded-2xl border border-amber-500/30">
+              <div className="flex items-center gap-2 sm:gap-3">
                 <motion.div
                   animate={{ rotate: 360 }}
                   transition={{ repeat: Infinity, duration: 1, ease: 'linear' }}
-                  className="w-6 h-6 border-2 border-amber-500 border-t-transparent rounded-full"
+                  className="w-4 h-4 sm:w-6 sm:h-6 border-2 border-amber-500 border-t-transparent rounded-full"
                 />
-                <span className="text-amber-200 font-medium">Rakip düşünüyor...</span>
+                <span className="text-amber-200 font-medium text-sm sm:text-base">Rakip düşünüyor...</span>
               </div>
             </div>
           </motion.div>

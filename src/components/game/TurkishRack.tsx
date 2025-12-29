@@ -226,7 +226,8 @@ export const TurkishPlayerRack = memo(function TurkishPlayerRack({
 });
 
 // ============================================
-// OPPONENT RACK - Compact view for other players
+// OPPONENT RACK - Compact uniform view for all positions
+// Same size for left, top, right - mobile responsive
 // ============================================
 
 interface OpponentRackProps {
@@ -249,99 +250,66 @@ export const TurkishOpponentRack = memo(function TurkishOpponentRack({
   isAI = false,
   position,
   thinkingText,
-  score = 0,
   className,
 }: OpponentRackProps) {
   const isVertical = position === 'left' || position === 'right';
-  const maxVisibleTiles = isVertical ? 7 : 10;
+  // Uniform tile count for all positions - show max 8 on mobile, 10 on larger screens
+  const maxVisibleTiles = 8;
   const visibleTiles = Math.min(tileCount, maxVisibleTiles);
   const extraTiles = tileCount - visibleTiles;
 
   return (
-    <motion.div
+    <div
       className={cn(
-        'flex items-center gap-3',
+        'flex items-center gap-1 sm:gap-2',
         isVertical ? 'flex-col' : 'flex-row',
-        position === 'right' && 'flex-col-reverse',
         className
       )}
-      animate={isCurrentTurn ? { scale: [1, 1.02, 1] } : {}}
-      transition={{ repeat: Infinity, duration: 2 }}
     >
-      {/* Player info card */}
+      {/* Player info card - compact and uniform */}
       <div
         className={cn(
-          'flex items-center gap-2 p-2 rounded-xl',
-          'bg-gradient-to-b from-amber-900/90 to-amber-950/90',
-          'border border-amber-700/50',
-          'backdrop-blur-sm shadow-lg',
-          isCurrentTurn && 'ring-2 ring-green-500 active-turn-pulse'
+          'flex items-center gap-1 sm:gap-2 p-1 sm:p-1.5 md:p-2 rounded-md sm:rounded-lg',
+          'bg-gray-800/90 border border-gray-700',
+          isCurrentTurn && 'ring-1 sm:ring-2 ring-green-400 border-green-500',
+          isVertical && 'flex-col'
         )}
       >
         {/* Avatar */}
-        <div className="relative">
-          <div
-            className={cn(
-              'w-10 h-10 rounded-full flex items-center justify-center',
-              'bg-gradient-to-br from-amber-600 to-amber-800',
-              'border-2 border-amber-500',
-              'text-white font-bold text-sm'
-            )}
-          >
-            {isAI ? '🤖' : playerAvatar ? (
-              <img src={playerAvatar} alt={playerName} className="w-full h-full rounded-full object-cover" />
-            ) : (
-              playerName?.[0]?.toUpperCase() || '?'
-            )}
-          </div>
-          {/* Online indicator */}
-          <div
-            className={cn(
-              'absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-amber-900',
-              isCurrentTurn ? 'bg-green-500' : 'bg-amber-500'
-            )}
-          />
+        <div
+          className={cn(
+            'w-5 h-5 sm:w-6 sm:h-6 md:w-8 md:h-8 rounded-full flex items-center justify-center',
+            'bg-gradient-to-br from-blue-400 to-blue-600',
+            'text-white font-bold text-[8px] sm:text-[10px] md:text-xs'
+          )}
+        >
+          {isAI ? '🤖' : playerAvatar ? (
+            <img src={playerAvatar} alt={playerName} className="w-full h-full rounded-full object-cover" />
+          ) : (
+            playerName?.[0]?.toUpperCase() || '?'
+          )}
         </div>
 
         {/* Name and status */}
-        <div className="flex flex-col min-w-0">
-          <span className="text-amber-200 font-medium text-sm truncate max-w-[80px]">
+        <div className="text-center">
+          <div className="text-white font-bold text-[8px] sm:text-[10px] md:text-xs truncate max-w-[40px] sm:max-w-[60px] md:max-w-[80px]">
             {playerName}
-          </span>
-          <AnimatePresence mode="wait">
-            {thinkingText ? (
-              <motion.span
-                key="thinking"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="text-green-400 text-xs flex items-center gap-1"
-              >
-                <span className="animate-pulse">●</span>
-                {thinkingText}
-              </motion.span>
-            ) : (
-              <motion.span
-                key="tiles"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="text-amber-400/70 text-xs"
-              >
-                {tileCount} taş
-              </motion.span>
-            )}
-          </AnimatePresence>
+          </div>
+          <div className={cn(
+            'text-[7px] sm:text-[8px] md:text-[10px] font-bold',
+            isCurrentTurn ? 'text-green-400' : 'text-gray-400'
+          )}>
+            {thinkingText || `${tileCount} taş`}
+          </div>
         </div>
       </div>
 
-      {/* Mini tile rack */}
+      {/* Mini tile rack - uniform size for all positions */}
       <div
         className={cn(
-          'flex gap-0.5 p-2 rounded-lg',
-          'bg-gradient-to-b from-amber-800/50 to-amber-900/50',
-          'border border-amber-700/30',
-          isVertical ? 'flex-col' : 'flex-row'
+          'flex gap-px p-0.5 sm:p-1 rounded',
+          'bg-amber-700/80 border border-amber-600',
+          isVertical && 'flex-wrap justify-center max-w-[40px] sm:max-w-[50px] md:max-w-[60px]'
         )}
       >
         {Array.from({ length: visibleTiles }).map((_, i) => (
@@ -349,29 +317,26 @@ export const TurkishOpponentRack = memo(function TurkishOpponentRack({
             key={i}
             className={cn(
               'rounded-sm',
-              'bg-gradient-to-b from-amber-700 to-amber-800',
-              'border border-amber-600/50',
-              isVertical ? 'w-5 h-6' : 'w-4 h-5'
+              'bg-gradient-to-b from-sky-500 to-sky-600',
+              'border border-sky-400/50',
+              // Uniform size for all positions - just smaller on mobile
+              'w-2 h-2.5 sm:w-2.5 sm:h-3 md:w-3 md:h-4'
             )}
-          >
-            <div className="w-full h-full flex items-center justify-center">
-              <div className="w-1.5 h-1.5 bg-amber-500/30 rotate-45" />
-            </div>
-          </div>
+          />
         ))}
         {extraTiles > 0 && (
           <div
             className={cn(
               'flex items-center justify-center rounded-sm',
-              'bg-amber-600/30 text-amber-300 text-[10px] font-bold',
-              isVertical ? 'w-5 h-6' : 'w-4 h-5'
+              'bg-amber-600/50 text-amber-200 text-[6px] sm:text-[7px] md:text-[8px] font-bold',
+              'w-2 h-2.5 sm:w-2.5 sm:h-3 md:w-3 md:h-4'
             )}
           >
             +{extraTiles}
           </div>
         )}
       </div>
-    </motion.div>
+    </div>
   );
 });
 
