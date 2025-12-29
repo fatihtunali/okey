@@ -326,47 +326,27 @@ function PlayContent() {
     );
   }
 
-  // Game in progress
+  // Game in progress - Full screen game board
   return (
-    <div className="min-h-screen bg-gradient-to-br from-amber-950 via-stone-900 to-stone-950 ottoman-pattern">
-      {/* Header */}
-      <header className="bg-stone-900/80 backdrop-blur-sm border-b border-amber-600/30">
-        <div className="container mx-auto px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <button
-              onClick={() => router.push('/')}
-              className="text-2xl font-bold text-amber-400 hover:text-amber-300 transition-colors"
-            >
-              🎴 Okey
-            </button>
-            <span className="px-3 py-1 bg-amber-600/20 text-amber-300 text-sm rounded-lg border border-amber-500/30">
-              {mode === 'okey101' ? '101 Okey' : 'Normal Okey'}
-            </span>
-            {isApiGame && (
-              <span className="px-3 py-1 bg-green-600/20 text-green-300 text-sm rounded-lg border border-green-500/30">
-                Online
-              </span>
-            )}
-          </div>
+    <div className="h-screen w-screen overflow-hidden">
+      {/* Back button overlay */}
+      <button
+        onClick={() => router.push('/')}
+        className="absolute top-2 left-2 z-50 px-2 py-1 text-xs bg-stone-900/80 text-amber-400 rounded hover:bg-stone-800 transition-colors"
+      >
+        ← Çıkış
+      </button>
 
-          <div className="flex items-center gap-4">
-            {isProcessingAI && !isApiGame && (
-              <span className="text-amber-300/60 text-sm animate-pulse flex items-center gap-2">
-                <span className="w-2 h-2 bg-amber-400 rounded-full animate-ping"></span>
-                Rakip düşünüyor...
-              </span>
-            )}
-            {error && (
-              <span className="text-red-400 text-sm bg-red-900/30 px-3 py-1 rounded-lg">{error}</span>
-            )}
-          </div>
+      {/* Error overlay */}
+      {error && (
+        <div className="absolute top-2 right-2 z-50 text-red-400 text-xs bg-red-900/80 px-2 py-1 rounded">
+          {error}
         </div>
-      </header>
+      )}
 
-      {/* Game board */}
-      <main className="container mx-auto px-4 py-4">
-        {game && (
-          <TurkishGameBoard
+      {/* Full screen game board */}
+      {game && (
+        <TurkishGameBoard
             game={isApiGame ? convertApiGameToLocal(apiGame!) : localGame!}
             currentPlayerId={session?.user?.id || playerId}
             rackLayout={rackLayout}
@@ -382,8 +362,7 @@ function PlayContent() {
             timeRemaining={timeRemaining}
             isProcessingAI={isProcessingAI && !isApiGame}
           />
-        )}
-      </main>
+      )}
     </div>
   );
 }
