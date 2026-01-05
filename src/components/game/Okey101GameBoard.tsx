@@ -702,27 +702,79 @@ export default function Okey101GameBoard({
           />
         )}
 
-        {/* Timer and player info */}
-        <div className="flex justify-between items-center mb-2">
-          <div className="flex items-center gap-2">
-            <div className={cn(
-              'text-xs sm:text-sm font-bold',
-              (currentPlayer?.score101 || 0) >= 80 ? 'text-red-400' : 'text-amber-400'
-            )}>
-              {currentPlayer?.name}: {currentPlayer?.score101 || 0} puan
+        {/* Current player info bar with discarded tile */}
+        <div className="flex items-center justify-between bg-stone-800/80 rounded-xl p-2 sm:p-3 mb-2 border border-amber-500/30">
+          {/* Player avatar and info */}
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className="relative">
+              <div className={cn(
+                'w-10 h-10 sm:w-12 sm:h-12 rounded-full',
+                'bg-gradient-to-br from-blue-600 to-blue-800',
+                'border-2 flex items-center justify-center',
+                isPlayerTurn ? 'border-green-400 ring-2 ring-green-400/50' : 'border-blue-400/50',
+              )}>
+                <span className="text-lg sm:text-2xl">👤</span>
+              </div>
+              {/* Turn indicator */}
+              {isPlayerTurn && (
+                <div className="absolute -bottom-0.5 left-1/2 -translate-x-1/2">
+                  <div className="w-2 h-2 sm:w-3 sm:h-3 bg-green-500 rounded-full animate-pulse shadow-lg shadow-green-500/50" />
+                </div>
+              )}
+              {/* Opened badge */}
+              {currentPlayer?.hasOpened && (
+                <div className="absolute -top-0.5 -left-0.5 bg-blue-500 text-white text-[8px] font-bold px-1 rounded">
+                  Açık
+                </div>
+              )}
+              {/* Tile count badge */}
+              <div className="absolute -top-0.5 -right-0.5 bg-amber-600 text-white text-[10px] font-bold w-4 h-4 sm:w-5 sm:h-5 rounded-full flex items-center justify-center border border-amber-400">
+                {currentPlayer?.tiles.length || 0}
+              </div>
             </div>
-            {currentPlayer?.hasOpened && (
-              <span className="text-xs bg-blue-500 text-white px-2 py-0.5 rounded">Açık</span>
-            )}
+            <div>
+              <div className={cn(
+                'text-sm sm:text-base font-bold',
+                isPlayerTurn ? 'text-green-400' : 'text-white'
+              )}>
+                {currentPlayer?.name} <span className="text-blue-400">(Sen)</span>
+              </div>
+              <div className={cn(
+                'text-xs sm:text-sm font-bold',
+                (currentPlayer?.score101 || 0) >= 80 ? 'text-red-400' : 'text-amber-400'
+              )}>
+                {currentPlayer?.score101 || 0} puan
+              </div>
+            </div>
           </div>
+
+          {/* Timer */}
           {isPlayerTurn && timeRemaining !== undefined && (
             <div className={cn(
-              'text-sm sm:text-lg font-bold',
-              timeRemaining <= 10 ? 'text-red-400 animate-pulse' : 'text-white'
+              'text-lg sm:text-2xl font-bold px-3 py-1 rounded-lg',
+              timeRemaining <= 10 ? 'text-red-400 bg-red-500/20 animate-pulse' : 'text-white bg-stone-700/50'
             )}>
               {timeRemaining}s
             </div>
           )}
+
+          {/* Player's own discarded tile */}
+          <div className="flex flex-col items-center">
+            <span className="text-[10px] sm:text-xs text-gray-400 mb-1">Son Attığın</span>
+            <div className={cn(
+              'w-8 h-11 sm:w-12 sm:h-16 rounded-lg',
+              'bg-stone-700/80 border-2 flex items-center justify-center',
+              currentPlayer?.lastDiscardedTile ? 'border-stone-500' : 'border-stone-600/50'
+            )}>
+              {currentPlayer?.lastDiscardedTile ? (
+                <div className="transform scale-50 sm:scale-75">
+                  <TurkishTile tile={currentPlayer.lastDiscardedTile} okeyTile={game.okeyTile} size="sm" />
+                </div>
+              ) : (
+                <span className="text-stone-500 text-[8px] sm:text-[10px]">Boş</span>
+              )}
+            </div>
+          </div>
         </div>
 
         {/* Error message */}

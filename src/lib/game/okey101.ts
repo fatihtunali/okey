@@ -604,6 +604,16 @@ export function discard101(
   // Lock all melds at end of turn
   const lockedMelds = (game.tableMelds || []).map(m => ({ ...m, isLocked: true }));
 
+  // Check if tile bag is empty - end the round with no winner
+  if (game.tileBag.length === 0) {
+    return endRoundNoWinner({
+      ...game,
+      players: updatedPlayers,
+      discardPile: [...game.discardPile, discardedTile],
+      tableMelds: lockedMelds,
+    });
+  }
+
   return {
     ...game,
     players: updatedPlayers,
@@ -621,6 +631,105 @@ export function discard101(
 // ============================================
 // GAME FINISHING
 // ============================================
+
+/**
+ * End round when tile bag is empty (no winner)
+ * Everyone gets penalized for their remaining tiles
+ */
+export function endRoundNoWinner(game: GameState): GameState {
+  // Calculate scores - no winner, everyone gets penalized
+  const roundResults: Score101[] = game.players.map(player => {
+    if (player.isEliminated) {
+      return {
+        playerId: player.id,
+        playerName: player.name,
+        tilesLeft: [],
+        baseScore: 0,
+        multiplier: 1,
+        totalScore: 0,
+        isWinner: false,
+        isEliminated: true,
+      };
+    }
+
+    // Calculate penalty based on remaining tiles
+    let baseScore: number;
+
+    if (!player.hasOpened) {
+      // 202 penalty for not opening
+      baseScore = OKEY101_CONSTANTS.UNOPENED_PENALTY;
+    } else {
+      // Sum of remaining tile values
+      baseScore = calculateTileValues(player.tiles, game.okeyTile);
+    }
+
+    // Check if player has okey in hand (extra 101 penalty)
+    const hasOkey = player.tiles.some(t =>
+      !t.isJoker && game.okeyTile &&
+      t.number === game.okeyTile.number &&
+      t.color === game.okeyTile.color
+    );
+
+    if (hasOkey) {
+      baseScore += OKEY101_CONSTANTS.STANDARD_PENALTY;
+    }
+
+    const totalScore = baseScore;
+    const newTotal = (player.score101 || 0) + totalScore;
+
+    return {
+      playerId: player.id,
+      playerName: player.name,
+      tilesLeft: player.tiles,
+      baseScore,
+      multiplier: 1,
+      totalScore,
+      isWinner: false,
+      isEliminated: newTotal >= 101,
+    };
+  });
+
+  // Update player scores
+  const updatedPlayers = game.players.map(player => {
+    if (player.isEliminated) return player;
+
+    const result = roundResults.find(r => r.playerId === player.id)!;
+    const newScore = (player.score101 || 0) + result.totalScore;
+
+    return {
+      ...player,
+      score101: newScore,
+      roundScore: result.totalScore,
+      isEliminated: newScore >= 101,
+    };
+  });
+
+  // Check if game is over (only 1 player left)
+  const remainingPlayers = updatedPlayers.filter(p => !p.isEliminated);
+
+  if (remainingPlayers.length <= 1) {
+    // Game over
+    return {
+      ...game,
+      status: 'finished',
+      players: updatedPlayers,
+      winnerId: remainingPlayers[0]?.id || null,
+      finishType: 'draw', // No winner - tile bag empty
+      finishedAt: Date.now(),
+      roundResults,
+    };
+  }
+
+  // Round over, but game continues
+  return {
+    ...game,
+    status: 'finished', // Round finished
+    players: updatedPlayers,
+    winnerId: null, // No winner this round
+    finishType: 'draw', // Tile bag empty
+    roundResults,
+  };
+}
 
 /**
  * Finish the 101 Okey round

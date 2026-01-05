@@ -153,13 +153,20 @@ export default function ScoreBoard101({
         className="bg-gradient-to-b from-stone-800 to-stone-900 rounded-2xl border border-amber-500/30 shadow-2xl max-w-lg w-full max-h-[90vh] overflow-hidden"
       >
         {/* Header */}
-        <div className="bg-gradient-to-r from-amber-600 to-amber-700 px-6 py-4">
+        <div className={cn(
+          "px-6 py-4 bg-gradient-to-r",
+          winner ? "from-amber-600 to-amber-700" : "from-gray-600 to-gray-700"
+        )}>
           <h2 className="text-xl font-bold text-white text-center">
             {isGameOver ? 'Oyun Bitti!' : `${game.roundNumber}. El Sonucu`}
           </h2>
-          {winner && (
+          {winner ? (
             <p className="text-center text-amber-200 text-sm mt-1">
               Kazanan: {winner.playerName} 🎉
+            </p>
+          ) : (
+            <p className="text-center text-gray-300 text-sm mt-1">
+              Deste Bitti - Kazanan Yok 📦
             </p>
           )}
         </div>

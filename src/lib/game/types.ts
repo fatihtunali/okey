@@ -109,7 +109,7 @@ export interface GameState {
 
   // Game end
   winnerId: string | null;
-  finishType?: 'normal' | 'cift' | 'el';  // 101 Okey finish types
+  finishType?: 'normal' | 'cift' | 'el' | 'draw';  // 101 Okey finish types (draw = tile bag empty)
 
   // Timestamps
   createdAt: number;
@@ -180,8 +180,8 @@ export interface Score101 {
 // Round result for 101 Okey
 export interface Round101Result {
   roundNumber: number;
-  winnerId: string;
-  finishType: 'normal' | 'cift' | 'el';
+  winnerId: string | null;
+  finishType: 'normal' | 'cift' | 'el' | 'draw';
   scores: Score101[];
   eliminatedPlayers: string[];
 }
