@@ -163,7 +163,7 @@ interface PlayerRackProps {
   onSortByRuns?: () => void;
   canSelect: boolean;
   canDiscard?: boolean;
-  onDiscardDrop?: (tileId: string) => void;
+  onDiscardTile?: (tileId: string) => void;
   leftOpponentDiscard?: TileType | null;
   canPickFromLeft?: boolean;
   onPickFromLeft?: () => void;
@@ -180,12 +180,13 @@ function PlayerRack({
   onSortByRuns,
   canSelect,
   canDiscard,
-  onDiscardDrop,
+  onDiscardTile,
   leftOpponentDiscard,
   canPickFromLeft,
   onPickFromLeft,
 }: PlayerRackProps) {
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+  const [dragOverDiscard, setDragOverDiscard] = useState(false);
 
   const tileMap = tiles.reduce((acc, tile) => {
     acc[tile.id] = tile;
@@ -224,11 +225,18 @@ function PlayerRack({
 
   const handleDiscardDrop = (e: React.DragEvent) => {
     e.preventDefault();
+    setDragOverDiscard(false);
     const source = e.dataTransfer.getData('source');
     const tileId = e.dataTransfer.getData('tileId');
 
-    if (source === 'rack' && tileId && canDiscard && onDiscardDrop) {
-      onDiscardDrop(tileId);
+    if (source === 'rack' && tileId && canDiscard && onDiscardTile) {
+      onDiscardTile(tileId);
+    }
+  };
+
+  const handleDoubleClick = (tile: TileType) => {
+    if (canDiscard && onDiscardTile) {
+      onDiscardTile(tile.id);
     }
   };
 
@@ -250,6 +258,7 @@ function PlayerRack({
             isSelected={selectedTileId === tile.id}
             size="lg"
             onClick={canSelect ? () => onTileSelect(tile) : undefined}
+            onDoubleClick={canDiscard ? () => handleDoubleClick(tile) : undefined}
             draggable
             onDragStart={handleDragStart(index, tile.id)}
           />
@@ -329,72 +338,85 @@ function PlayerRack({
           <span className="hidden sm:inline">Seri Diz</span>
         </button>
 
-        {/* Discard button/drop zone */}
-        {canDiscard && selectedTileId && (
-          <motion.button
-            onClick={() => {
-              if (selectedTileId && onDiscardDrop) {
-                onDiscardDrop(selectedTileId);
-              }
-            }}
-            className={cn(
-              'flex items-center gap-1 px-4 py-2 rounded-lg',
-              'bg-gradient-to-b from-red-500 to-red-600',
-              'border-2 border-red-400',
-              'text-white text-xs sm:text-sm font-bold',
-              'shadow-lg shadow-red-500/30',
-              'cursor-pointer'
-            )}
-            onDrop={handleDiscardDrop}
-            onDragOver={(e) => e.preventDefault()}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-          >
-            <span>🗑️</span>
-            <span>At</span>
-          </motion.button>
+        {/* Double-click hint when can discard */}
+        {canDiscard && (
+          <div className="flex items-center gap-1 px-3 py-2 rounded-lg bg-stone-700/50 text-stone-300 text-xs">
+            <span>💡</span>
+            <span className="hidden sm:inline">Çift tıkla at</span>
+          </div>
         )}
       </div>
 
-      {/* Rack container - Premium wood design */}
-      <div className={cn(
-        'relative rounded-xl overflow-hidden',
-        'bg-gradient-to-b from-amber-600 via-amber-700 to-amber-800',
-        'border-4 border-amber-500',
-        'shadow-[inset_0_2px_4px_rgba(0,0,0,0.3),0_4px_12px_rgba(0,0,0,0.4)]'
-      )}>
-        {/* Wood grain texture */}
-        <div
-          className="absolute inset-0 opacity-20 pointer-events-none"
-          style={{
-            backgroundImage: `repeating-linear-gradient(
-              90deg,
-              transparent,
-              transparent 8px,
-              rgba(0,0,0,0.1) 8px,
-              rgba(0,0,0,0.1) 10px
-            )`
-          }}
-        />
+      {/* Rack with discard zone on right */}
+      <div className="flex items-stretch gap-2 sm:gap-3">
+        {/* Rack container - Premium wood design */}
+        <div className={cn(
+          'flex-1 relative rounded-xl overflow-hidden',
+          'bg-gradient-to-b from-amber-600 via-amber-700 to-amber-800',
+          'border-4 border-amber-500',
+          'shadow-[inset_0_2px_4px_rgba(0,0,0,0.3),0_4px_12px_rgba(0,0,0,0.4)]'
+        )}>
+          {/* Wood grain texture */}
+          <div
+            className="absolute inset-0 opacity-20 pointer-events-none"
+            style={{
+              backgroundImage: `repeating-linear-gradient(
+                90deg,
+                transparent,
+                transparent 8px,
+                rgba(0,0,0,0.1) 8px,
+                rgba(0,0,0,0.1) 10px
+              )`
+            }}
+          />
 
-        {/* Tiles container */}
-        <div className="relative p-2 sm:p-3">
-          {/* Top row */}
-          <div className="flex gap-0.5 sm:gap-1 justify-center mb-1 overflow-x-auto scrollbar-hide">
-            {topRow.map((i) => renderSlot(i, 'top'))}
-          </div>
+          {/* Tiles container */}
+          <div className="relative p-2 sm:p-3">
+            {/* Top row */}
+            <div className="flex gap-0.5 sm:gap-1 justify-center mb-1 overflow-x-auto scrollbar-hide">
+              {topRow.map((i) => renderSlot(i, 'top'))}
+            </div>
 
-          {/* Divider with ornament */}
-          <div className="relative h-1 my-1">
-            <div className="absolute inset-0 bg-amber-900/60 rounded" />
-            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-4 h-4 bg-amber-500 rotate-45 border border-amber-400" />
-          </div>
+            {/* Divider with ornament */}
+            <div className="relative h-1 my-1">
+              <div className="absolute inset-0 bg-amber-900/60 rounded" />
+              <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-4 h-4 bg-amber-500 rotate-45 border border-amber-400" />
+            </div>
 
-          {/* Bottom row */}
-          <div className="flex gap-0.5 sm:gap-1 justify-center overflow-x-auto scrollbar-hide">
-            {bottomRow.map((i) => renderSlot(i, 'bottom'))}
+            {/* Bottom row */}
+            <div className="flex gap-0.5 sm:gap-1 justify-center overflow-x-auto scrollbar-hide">
+              {bottomRow.map((i) => renderSlot(i, 'bottom'))}
+            </div>
           </div>
         </div>
+
+        {/* Discard drop zone on the right */}
+        <motion.div
+          className={cn(
+            'w-16 sm:w-20 flex flex-col items-center justify-center rounded-xl',
+            'border-3 border-dashed transition-all',
+            dragOverDiscard
+              ? 'bg-red-500/40 border-red-400 scale-105'
+              : canDiscard
+                ? 'bg-red-900/40 border-red-500/60'
+                : 'bg-stone-800/40 border-stone-600/40',
+          )}
+          onDrop={handleDiscardDrop}
+          onDragOver={(e) => {
+            e.preventDefault();
+            if (canDiscard) setDragOverDiscard(true);
+          }}
+          onDragLeave={() => setDragOverDiscard(false)}
+          animate={dragOverDiscard ? { scale: 1.05 } : { scale: 1 }}
+        >
+          <span className="text-2xl sm:text-3xl mb-1">🗑️</span>
+          <span className={cn(
+            'text-[10px] sm:text-xs font-bold text-center',
+            canDiscard ? 'text-red-300' : 'text-stone-500'
+          )}>
+            {canDiscard ? 'Buraya\nSürükle' : 'At'}
+          </span>
+        </motion.div>
       </div>
     </div>
   );
@@ -829,7 +851,7 @@ export const TurkishGameBoard = memo(function TurkishGameBoard({
           onSortByRuns={onSortByRuns}
           canSelect={game.turnPhase === 'discard'}
           canDiscard={isMyTurn && game.turnPhase === 'discard' && !isProcessingAI}
-          onDiscardDrop={onDiscardById}
+          onDiscardTile={onDiscardById}
           leftOpponentDiscard={lastDiscardedTile}
           canPickFromLeft={canPickFromLeftOpponent}
           onPickFromLeft={onDrawFromDiscard}
