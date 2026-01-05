@@ -256,7 +256,7 @@ function PlayerRack({
             tile={tile}
             okeyTile={okeyTile}
             isSelected={selectedTileId === tile.id}
-            size="lg"
+            size="xl"
             onClick={canSelect ? () => onTileSelect(tile) : undefined}
             onDoubleClick={canDiscard ? () => handleDoubleClick(tile) : undefined}
             draggable
@@ -270,7 +270,7 @@ function PlayerRack({
       <div
         key={index}
         className={cn(
-          'w-11 h-[60px] sm:w-12 sm:h-[66px] md:w-14 md:h-[72px]',
+          'w-14 h-[72px] sm:w-16 sm:h-20',
           'rounded-md border-2 border-dashed flex-shrink-0',
           'transition-all duration-200',
           isDragOver
@@ -284,13 +284,15 @@ function PlayerRack({
     );
   };
 
-  // Use 13 slots per row on mobile, 15 on desktop
-  const slotsPerRow = typeof window !== 'undefined' && window.innerWidth < 640 ? 13 : 15;
+  // Calculate slots based on actual tiles - max 15 per row, but show fewer if less tiles
+  const totalTiles = tiles.length;
+  const minSlots = Math.max(8, Math.ceil(totalTiles / 2) + 1); // At least 8 slots per row, or enough for tiles + 1
+  const slotsPerRow = Math.min(15, Math.max(minSlots, 8));
   const topRow = Array.from({ length: slotsPerRow }, (_, i) => i);
   const bottomRow = Array.from({ length: slotsPerRow }, (_, i) => i + slotsPerRow);
 
   return (
-    <div className="w-full px-2 sm:px-4">
+    <div className="w-full flex flex-col items-center px-2 sm:px-4">
       {/* Sort buttons row - mobile optimized */}
       <div className="flex justify-center gap-2 mb-2">
         {/* Pick from left */}
@@ -351,7 +353,7 @@ function PlayerRack({
       <div className="flex items-stretch gap-2 sm:gap-3">
         {/* Rack container - Premium wood design */}
         <div className={cn(
-          'flex-1 relative rounded-xl overflow-hidden',
+          'relative rounded-xl overflow-hidden',
           'bg-gradient-to-b from-amber-600 via-amber-700 to-amber-800',
           'border-4 border-amber-500',
           'shadow-[inset_0_2px_4px_rgba(0,0,0,0.3),0_4px_12px_rgba(0,0,0,0.4)]'
@@ -393,7 +395,7 @@ function PlayerRack({
         {/* Discard drop zone on the right */}
         <motion.div
           className={cn(
-            'w-16 sm:w-20 flex flex-col items-center justify-center rounded-xl',
+            'w-20 sm:w-24 flex flex-col items-center justify-center rounded-xl',
             'border-3 border-dashed transition-all',
             dragOverDiscard
               ? 'bg-red-500/40 border-red-400 scale-105'
@@ -409,9 +411,9 @@ function PlayerRack({
           onDragLeave={() => setDragOverDiscard(false)}
           animate={dragOverDiscard ? { scale: 1.05 } : { scale: 1 }}
         >
-          <span className="text-2xl sm:text-3xl mb-1">🗑️</span>
+          <span className="text-3xl sm:text-4xl mb-1">🗑️</span>
           <span className={cn(
-            'text-[10px] sm:text-xs font-bold text-center',
+            'text-xs sm:text-sm font-bold text-center whitespace-pre-line',
             canDiscard ? 'text-red-300' : 'text-stone-500'
           )}>
             {canDiscard ? 'Buraya\nSürükle' : 'At'}
