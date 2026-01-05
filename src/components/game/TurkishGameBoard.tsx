@@ -58,7 +58,7 @@ function OpponentAvatar({
 
   return (
     <div className={cn(
-      'flex items-center gap-2',
+      'flex items-center gap-1 sm:gap-2',
       isVertical ? 'flex-col' : 'flex-row',
       position === 'right' && !isVertical && 'flex-row-reverse',
     )}>
@@ -66,9 +66,9 @@ function OpponentAvatar({
       <div className="relative">
         <motion.div
           className={cn(
-            'w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 rounded-full',
+            'w-10 h-10 sm:w-14 sm:h-14 rounded-full',
             'bg-gradient-to-br from-stone-700 to-stone-900',
-            'border-3 flex items-center justify-center',
+            'border-2 sm:border-3 flex items-center justify-center',
             'shadow-lg',
             isCurrentTurn
               ? 'border-green-400 ring-2 ring-green-400/50'
@@ -77,20 +77,20 @@ function OpponentAvatar({
           animate={isCurrentTurn ? { scale: [1, 1.05, 1] } : {}}
           transition={{ repeat: Infinity, duration: 2 }}
         >
-          <span className="text-2xl sm:text-3xl">
+          <span className="text-lg sm:text-3xl">
             {player.isAI ? '🤖' : '👤'}
           </span>
         </motion.div>
 
         {/* Turn indicator */}
         {isCurrentTurn && (
-          <div className="absolute -bottom-1 left-1/2 -translate-x-1/2">
-            <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse shadow-lg shadow-green-500/50" />
+          <div className="absolute -bottom-0.5 sm:-bottom-1 left-1/2 -translate-x-1/2">
+            <div className="w-2 h-2 sm:w-3 sm:h-3 bg-green-500 rounded-full animate-pulse shadow-lg shadow-green-500/50" />
           </div>
         )}
 
         {/* Tile count badge */}
-        <div className="absolute -top-1 -right-1 bg-amber-600 text-white text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center border border-amber-400">
+        <div className="absolute -top-0.5 -right-0.5 sm:-top-1 sm:-right-1 bg-amber-600 text-white text-[10px] sm:text-xs font-bold w-4 h-4 sm:w-5 sm:h-5 rounded-full flex items-center justify-center border border-amber-400">
           {player.tiles.length}
         </div>
       </div>
@@ -101,13 +101,13 @@ function OpponentAvatar({
         isVertical ? 'w-full' : ''
       )}>
         <div className={cn(
-          'text-xs sm:text-sm font-bold truncate max-w-[80px]',
+          'text-[10px] sm:text-sm font-bold truncate max-w-[60px] sm:max-w-[80px]',
           isCurrentTurn ? 'text-green-400' : 'text-white'
         )}>
           {player.name}
         </div>
         {isThinking && (
-          <div className="text-[10px] text-yellow-400 animate-pulse">
+          <div className="text-[8px] sm:text-[10px] text-yellow-400 animate-pulse">
             Düşünüyor...
           </div>
         )}
@@ -118,7 +118,7 @@ function OpponentAvatar({
         onClick={canPickUp ? onPickUp : undefined}
         disabled={!canPickUp}
         className={cn(
-          'w-10 h-14 sm:w-12 sm:h-16 rounded-lg',
+          'w-8 h-11 sm:w-12 sm:h-16 rounded-lg',
           'bg-stone-800/80 border-2 flex items-center justify-center',
           canPickUp
             ? 'border-green-400 cursor-pointer shadow-lg shadow-green-500/30'
@@ -129,16 +129,16 @@ function OpponentAvatar({
         whileTap={canPickUp ? { scale: 0.95 } : {}}
       >
         {discardedTile ? (
-          <div className="transform scale-[0.6] sm:scale-75">
+          <div className="transform scale-50 sm:scale-75">
             <TurkishTile tile={discardedTile} okeyTile={okeyTile} size="sm" />
           </div>
         ) : (
-          <span className="text-stone-500 text-[10px]">Boş</span>
+          <span className="text-stone-500 text-[8px] sm:text-[10px]">Boş</span>
         )}
       </motion.button>
       {canPickUp && discardedTile && (
         <motion.div
-          className="text-[10px] text-green-400 font-bold"
+          className="text-[8px] sm:text-[10px] text-green-400 font-bold"
           animate={{ opacity: [1, 0.5, 1] }}
           transition={{ repeat: Infinity, duration: 1 }}
         >
@@ -240,6 +240,9 @@ function PlayerRack({
     }
   };
 
+  // Detect if mobile (will be checked via CSS, but also for slot count)
+  const isMobileView = typeof window !== 'undefined' && window.innerWidth < 640;
+
   const renderSlot = (index: number, row: 'top' | 'bottom') => {
     const slotTileId = rackLayout[index];
     const tile = slotTileId ? tileMap[slotTileId] : null;
@@ -270,7 +273,7 @@ function PlayerRack({
       <div
         key={index}
         className={cn(
-          'w-14 h-[72px] sm:w-16 sm:h-20',
+          'w-[11vw] h-[14vw] sm:w-16 sm:h-20',
           'rounded-md border-2 border-dashed flex-shrink-0',
           'transition-all duration-200',
           isDragOver
@@ -284,10 +287,12 @@ function PlayerRack({
     );
   };
 
-  // Calculate slots based on actual tiles - max 15 per row, but show fewer if less tiles
+  // Calculate slots based on actual tiles
+  // Mobile: max 8 per row for larger tiles, Desktop: up to 15
   const totalTiles = tiles.length;
-  const minSlots = Math.max(8, Math.ceil(totalTiles / 2) + 1); // At least 8 slots per row, or enough for tiles + 1
-  const slotsPerRow = Math.min(15, Math.max(minSlots, 8));
+  const maxSlotsPerRow = isMobileView ? 8 : 15;
+  const minSlots = Math.max(6, Math.ceil(totalTiles / 2) + 1);
+  const slotsPerRow = Math.min(maxSlotsPerRow, Math.max(minSlots, 6));
   const topRow = Array.from({ length: slotsPerRow }, (_, i) => i);
   const bottomRow = Array.from({ length: slotsPerRow }, (_, i) => i + slotsPerRow);
 
@@ -373,20 +378,20 @@ function PlayerRack({
           />
 
           {/* Tiles container */}
-          <div className="relative p-2 sm:p-3">
+          <div className="relative p-1.5 sm:p-3">
             {/* Top row */}
-            <div className="flex gap-0.5 sm:gap-1 justify-center mb-1 overflow-x-auto scrollbar-hide">
+            <div className="flex gap-[2px] sm:gap-1 justify-center mb-1 overflow-x-auto scrollbar-hide">
               {topRow.map((i) => renderSlot(i, 'top'))}
             </div>
 
             {/* Divider with ornament */}
-            <div className="relative h-1 my-1">
+            <div className="relative h-0.5 sm:h-1 my-0.5 sm:my-1">
               <div className="absolute inset-0 bg-amber-900/60 rounded" />
-              <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-4 h-4 bg-amber-500 rotate-45 border border-amber-400" />
+              <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-3 h-3 sm:w-4 sm:h-4 bg-amber-500 rotate-45 border border-amber-400" />
             </div>
 
             {/* Bottom row */}
-            <div className="flex gap-0.5 sm:gap-1 justify-center overflow-x-auto scrollbar-hide">
+            <div className="flex gap-[2px] sm:gap-1 justify-center overflow-x-auto scrollbar-hide">
               {bottomRow.map((i) => renderSlot(i, 'bottom'))}
             </div>
           </div>
@@ -395,8 +400,8 @@ function PlayerRack({
         {/* Discard drop zone on the right */}
         <motion.div
           className={cn(
-            'w-20 sm:w-24 flex flex-col items-center justify-center rounded-xl',
-            'border-3 border-dashed transition-all',
+            'w-[14vw] sm:w-24 flex flex-col items-center justify-center rounded-xl',
+            'border-2 sm:border-3 border-dashed transition-all',
             dragOverDiscard
               ? 'bg-red-500/40 border-red-400 scale-105'
               : canDiscard
@@ -411,12 +416,12 @@ function PlayerRack({
           onDragLeave={() => setDragOverDiscard(false)}
           animate={dragOverDiscard ? { scale: 1.05 } : { scale: 1 }}
         >
-          <span className="text-3xl sm:text-4xl mb-1">🗑️</span>
+          <span className="text-2xl sm:text-4xl mb-0.5 sm:mb-1">🗑️</span>
           <span className={cn(
-            'text-xs sm:text-sm font-bold text-center whitespace-pre-line',
+            'text-[10px] sm:text-sm font-bold text-center whitespace-pre-line',
             canDiscard ? 'text-red-300' : 'text-stone-500'
           )}>
-            {canDiscard ? 'Buraya\nSürükle' : 'At'}
+            {canDiscard ? 'At' : 'At'}
           </span>
         </motion.div>
       </div>
@@ -449,7 +454,7 @@ function CenterArea({
   onPickDiscard,
 }: CenterAreaProps) {
   return (
-    <div className="flex-1 flex items-center justify-center gap-4 sm:gap-8">
+    <div className="flex-1 flex items-center justify-center gap-2 sm:gap-8">
       {/* Draw pile */}
       <motion.button
         onClick={onDrawFromPile}
@@ -467,7 +472,7 @@ function CenterArea({
             <div
               key={i}
               className={cn(
-                'w-14 h-[72px] sm:w-16 sm:h-20 rounded-lg',
+                'w-10 h-14 sm:w-16 sm:h-20 rounded-lg',
                 i === 0 ? 'relative' : 'absolute',
                 'bg-gradient-to-br from-amber-800 via-amber-700 to-amber-900',
                 'border-2',
@@ -475,14 +480,14 @@ function CenterArea({
                 'shadow-lg'
               )}
               style={i > 0 ? {
-                bottom: i * 3,
-                right: i * 2,
+                bottom: i * 2,
+                right: i * 1.5,
                 zIndex: -i
               } : {}}
             >
               {i === 0 && (
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="text-amber-400 font-bold text-sm">OKEY</div>
+                  <div className="text-amber-400 font-bold text-[10px] sm:text-sm">OKEY</div>
                 </div>
               )}
             </div>
@@ -490,17 +495,17 @@ function CenterArea({
         </div>
 
         {/* Count */}
-        <div className="mt-2 bg-stone-900/80 text-amber-300 text-sm font-bold px-3 py-1 rounded-full border border-amber-600/50">
+        <div className="mt-1.5 sm:mt-2 bg-stone-900/80 text-amber-300 text-xs sm:text-sm font-bold px-2 sm:px-3 py-0.5 sm:py-1 rounded-full border border-amber-600/50">
           {tileBagCount}
         </div>
 
         {canDraw && (
           <motion.div
-            className="mt-1 text-green-400 text-xs font-medium"
+            className="mt-0.5 sm:mt-1 text-green-400 text-[10px] sm:text-xs font-medium"
             animate={{ opacity: [1, 0.5, 1] }}
             transition={{ repeat: Infinity, duration: 1.5 }}
           >
-            Taş Çek
+            Çek
           </motion.div>
         )}
       </motion.button>
@@ -508,26 +513,26 @@ function CenterArea({
       {/* Indicator tile with stand */}
       {indicatorTile && (
         <div className="flex flex-col items-center">
-          <div className="text-[10px] sm:text-xs text-amber-300/80 font-medium mb-1">
+          <div className="text-[8px] sm:text-xs text-amber-300/80 font-medium mb-0.5 sm:mb-1">
             GÖSTERGE
           </div>
 
           {/* Tile on stand */}
           <div className="relative">
-            <TurkishTile tile={indicatorTile} size="lg" />
+            <TurkishTile tile={indicatorTile} size="md" />
             {/* Wooden stand */}
-            <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-12 h-2 bg-gradient-to-b from-amber-700 to-amber-900 rounded-b border-x border-b border-amber-600" />
+            <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-10 sm:w-12 h-1.5 sm:h-2 bg-gradient-to-b from-amber-700 to-amber-900 rounded-b border-x border-b border-amber-600" />
           </div>
 
           {/* Okey info */}
           {okeyTile && (
             <div className={cn(
-              'mt-2 flex items-center gap-1.5 px-2 py-1 rounded-lg',
+              'mt-1.5 sm:mt-2 flex items-center gap-1 sm:gap-1.5 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-lg',
               'bg-stone-900/80 border border-amber-500/30'
             )}>
-              <span className="text-amber-300 text-[10px] sm:text-xs">Okey:</span>
+              <span className="text-amber-300 text-[8px] sm:text-xs">Okey:</span>
               <span className={cn(
-                'font-bold text-sm',
+                'font-bold text-xs sm:text-sm',
                 okeyTile.color === 'red' && 'text-red-400',
                 okeyTile.color === 'blue' && 'text-blue-400',
                 okeyTile.color === 'yellow' && 'text-amber-400',
@@ -550,11 +555,11 @@ function CenterArea({
         whileHover={canPickDiscard ? { scale: 1.05 } : {}}
         whileTap={canPickDiscard ? { scale: 0.95 } : {}}
       >
-        <div className="text-[10px] sm:text-xs text-amber-300/80 font-medium mb-1">
+        <div className="text-[8px] sm:text-xs text-amber-300/80 font-medium mb-0.5 sm:mb-1">
           ATILAN
         </div>
         <div className={cn(
-          'w-14 h-[72px] sm:w-16 sm:h-20 rounded-lg',
+          'w-10 h-14 sm:w-16 sm:h-20 rounded-lg',
           'flex items-center justify-center',
           'bg-stone-800/80 border-2',
           lastDiscardedTile
@@ -565,18 +570,18 @@ function CenterArea({
           canPickDiscard && 'cursor-pointer'
         )}>
           {lastDiscardedTile ? (
-            <TurkishTile tile={lastDiscardedTile} okeyTile={okeyTile} size="md" />
+            <TurkishTile tile={lastDiscardedTile} okeyTile={okeyTile} size="sm" />
           ) : (
-            <span className="text-stone-500 text-xs">Boş</span>
+            <span className="text-stone-500 text-[10px] sm:text-xs">Boş</span>
           )}
         </div>
         {canPickDiscard && lastDiscardedTile && (
           <motion.div
-            className="mt-1 text-xs text-green-400 font-bold"
+            className="mt-0.5 sm:mt-1 text-[10px] sm:text-xs text-green-400 font-bold"
             animate={{ opacity: [1, 0.5, 1] }}
             transition={{ repeat: Infinity, duration: 1 }}
           >
-            Tıkla Al
+            Al
           </motion.div>
         )}
       </motion.button>
@@ -763,9 +768,9 @@ export const TurkishGameBoard = memo(function TurkishGameBoard({
         </div>
 
         {/* Table layout */}
-        <div className="relative h-full flex flex-col p-2 sm:p-4">
+        <div className="relative h-full flex flex-col p-1 sm:p-4">
           {/* Top opponent */}
-          <div className="flex justify-center py-2">
+          <div className="flex justify-center py-1 sm:py-2">
             {topOpp && (
               <OpponentAvatar
                 player={topOpp.player}
@@ -781,7 +786,7 @@ export const TurkishGameBoard = memo(function TurkishGameBoard({
           {/* Middle row - Left opponent, Center, Right opponent */}
           <div className="flex-1 flex items-center min-h-0">
             {/* Left opponent */}
-            <div className="flex-shrink-0 w-20 sm:w-28">
+            <div className="flex-shrink-0 w-14 sm:w-28">
               {leftOpp && (
                 <OpponentAvatar
                   player={leftOpp.player}
@@ -809,7 +814,7 @@ export const TurkishGameBoard = memo(function TurkishGameBoard({
             />
 
             {/* Right opponent */}
-            <div className="flex-shrink-0 w-20 sm:w-28">
+            <div className="flex-shrink-0 w-14 sm:w-28">
               {rightOpp && (
                 <OpponentAvatar
                   player={rightOpp.player}
@@ -824,14 +829,14 @@ export const TurkishGameBoard = memo(function TurkishGameBoard({
           </div>
 
           {/* Current player info bar */}
-          <div className="flex justify-center py-2">
-            <div className="flex items-center gap-3 bg-stone-900/80 px-4 py-2 rounded-full border border-amber-500/30">
-              <span className="text-2xl">👤</span>
+          <div className="flex justify-center py-1 sm:py-2">
+            <div className="flex items-center gap-2 sm:gap-3 bg-stone-900/80 px-2 sm:px-4 py-1 sm:py-2 rounded-full border border-amber-500/30">
+              <span className="text-lg sm:text-2xl">👤</span>
               <div>
-                <div className="text-amber-300 font-bold text-sm">
+                <div className="text-amber-300 font-bold text-xs sm:text-sm">
                   {currentPlayer?.name || 'Sen'}
                 </div>
-                <div className="text-stone-400 text-xs">
+                <div className="text-stone-400 text-[10px] sm:text-xs">
                   {currentPlayer?.tiles.length || 0} taş
                 </div>
               </div>

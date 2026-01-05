@@ -16,7 +16,7 @@ interface TileProps {
   okeyTile?: TileType | null;
   isSelected?: boolean;
   isFaceDown?: boolean;
-  size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl';
+  size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl';
   onClick?: () => void;
   onDoubleClick?: () => void;
   draggable?: boolean;
@@ -26,12 +26,14 @@ interface TileProps {
 }
 
 // Size configurations - larger for better visibility
+// Mobile-first: use vw units for mobile scaling
 const sizes = {
   xs: { w: 'w-8', h: 'h-11', text: 'text-base', dot: 'w-1 h-1' },
   sm: { w: 'w-10', h: 'h-14', text: 'text-lg', dot: 'w-1.5 h-1.5' },
   md: { w: 'w-12', h: 'h-16', text: 'text-xl', dot: 'w-1.5 h-1.5' },
   lg: { w: 'w-14', h: 'h-[72px]', text: 'text-2xl', dot: 'w-2 h-2' },
-  xl: { w: 'w-16', h: 'h-20', text: 'text-3xl', dot: 'w-2 h-2' },
+  xl: { w: 'w-[11vw] sm:w-16', h: 'h-[14vw] sm:h-20', text: 'text-2xl sm:text-3xl', dot: 'w-2 h-2' },
+  '2xl': { w: 'w-[12vw] sm:w-20', h: 'h-[15vw] sm:h-24', text: 'text-3xl sm:text-4xl', dot: 'w-2.5 h-2.5' },
 };
 
 // Turkish color palette - high contrast for readability
@@ -236,7 +238,7 @@ export const TurkishTile = memo(function TurkishTile({
 // ============================================
 
 interface TileSlotProps {
-  size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl';
+  size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl';
   onDrop?: (e: React.DragEvent) => void;
   onDragOver?: (e: React.DragEvent) => void;
   onDragLeave?: () => void;
