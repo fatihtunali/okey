@@ -226,6 +226,7 @@ function ActionButtons101({
   turnPhase,
   hasOpened,
   hasSelectedTiles,
+  selectedTileCount,
   pendingMeldsPoints,
   canOpen,
   autoOpenPoints,
@@ -243,6 +244,7 @@ function ActionButtons101({
   turnPhase: string;
   hasOpened: boolean;
   hasSelectedTiles: boolean;
+  selectedTileCount: number;
   pendingMeldsPoints: number;
   canOpen: boolean;
   autoOpenPoints: number;
@@ -341,41 +343,49 @@ function ActionButtons101({
       )}
 
       {/* After opening */}
-      {hasOpened && hasSelectedTiles && (
+      {hasOpened && (
         <>
-          <motion.button
-            onClick={() => onLayMeld('set')}
-            className="px-3 py-1.5 bg-amber-600 text-white font-bold rounded-lg text-xs"
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-          >
-            Per İndir
-          </motion.button>
-          <motion.button
-            onClick={() => onLayMeld('run')}
-            className="px-3 py-1.5 bg-emerald-600 text-white font-bold rounded-lg text-xs"
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-          >
-            Seri İndir
-          </motion.button>
+          {hasSelectedTiles ? (
+            <>
+              <motion.button
+                onClick={() => onLayMeld('set')}
+                className="px-3 py-1.5 bg-amber-600 text-white font-bold rounded-lg text-xs"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                Per İndir
+              </motion.button>
+              <motion.button
+                onClick={() => onLayMeld('run')}
+                className="px-3 py-1.5 bg-emerald-600 text-white font-bold rounded-lg text-xs"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                Seri İndir
+              </motion.button>
+            </>
+          ) : (
+            <div className="px-3 py-1.5 bg-stone-700/50 text-amber-400/80 rounded-lg text-xs border border-amber-600/30">
+              💡 Grup indirmek için taş seçin
+            </div>
+          )}
         </>
       )}
 
-      {/* Discard button */}
+      {/* Discard button - only enabled when exactly 1 tile is selected */}
       <motion.button
         onClick={onDiscard}
-        disabled={!hasSelectedTiles}
+        disabled={selectedTileCount !== 1}
         className={cn(
           "px-4 py-2 font-bold rounded-lg shadow-lg text-sm",
-          hasSelectedTiles
+          selectedTileCount === 1
             ? 'bg-gradient-to-b from-red-500 to-red-600 text-white'
             : 'bg-gray-600 text-gray-400 cursor-not-allowed'
         )}
-        whileHover={hasSelectedTiles ? { scale: 1.05 } : {}}
-        whileTap={hasSelectedTiles ? { scale: 0.95 } : {}}
+        whileHover={selectedTileCount === 1 ? { scale: 1.05 } : {}}
+        whileTap={selectedTileCount === 1 ? { scale: 0.95 } : {}}
       >
-        At
+        {selectedTileCount === 1 ? 'At' : selectedTileCount > 1 ? `${selectedTileCount} taş seçili` : 'At'}
       </motion.button>
 
       {hasSelectedTiles && (
@@ -831,6 +841,7 @@ export default function Okey101GameBoard({
               turnPhase={game.turnPhase101 || 'draw'}
               hasOpened={currentPlayer?.hasOpened || false}
               hasSelectedTiles={hasSelectedTiles}
+              selectedTileCount={selectedTileIds.size}
               pendingMeldsPoints={pendingPoints}
               canOpen={canOpen}
               autoOpenPoints={autoOpenInfo.points}

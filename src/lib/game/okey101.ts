@@ -1074,24 +1074,34 @@ export function findBestOpeningMelds(tiles: Tile[], okeyTile: Tile | null): Meld
 }
 
 /**
- * Check if a tile is an okey (wildcard) - either fake joker or real okey tile
+ * Check if a tile is a fake joker (sahte okey) - ONLY the special joker tiles
+ * Real okey tiles (matching okeyTile number/color) are NOT wildcards by default
+ * They can be used as their actual value in melds
  */
-function isOkeyTile(tile: Tile, okeyTile: Tile | null): boolean {
-  if (tile.isJoker) return true;
-  if (okeyTile && tile.number === okeyTile.number && tile.color === okeyTile.color) return true;
-  return false;
+function isFakeJoker(tile: Tile): boolean {
+  return tile.isJoker === true;
+}
+
+/**
+ * Check if a tile is a real okey (matches the okeyTile number and color)
+ */
+function isRealOkey(tile: Tile, okeyTile: Tile | null): boolean {
+  if (!okeyTile) return false;
+  return !tile.isJoker && tile.number === okeyTile.number && tile.color === okeyTile.color;
 }
 
 /**
  * Find ALL possible melds from tiles (may have overlapping tiles)
- * Properly handles jokers and okey tiles as wildcards
+ * Only fake jokers (sahte okey) are used as wildcards
+ * Real okey tiles are treated as regular tiles with their actual value
  */
 function findAllPossibleMelds(tiles: Tile[], okeyTile: Tile | null): Meld[] {
   const melds: Meld[] = [];
 
-  // Separate okeys (wildcards) from regular tiles
-  const okeys = tiles.filter(t => isOkeyTile(t, okeyTile));
-  const regularTiles = tiles.filter(t => !isOkeyTile(t, okeyTile));
+  // Only fake jokers are wildcards
+  // Real okey tiles are treated as regular tiles
+  const fakeJokers = tiles.filter(t => isFakeJoker(t));
+  const regularTiles = tiles.filter(t => !isFakeJoker(t)); // Includes real okey tiles
 
   // Find sets (same number, different colors)
   const byNumber = new Map<number, Tile[]>();
@@ -1131,34 +1141,34 @@ function findAllPossibleMelds(tiles: Tile[], okeyTile: Tile | null): Meld[] {
       });
     }
 
-    // Sets with 1 okey (2 regular + 1 okey = 3 tile set)
-    if (setTiles.length >= 2 && okeys.length >= 1) {
+    // Sets with 1 fake joker (2 regular + 1 joker = 3 tile set)
+    if (setTiles.length >= 2 && fakeJokers.length >= 1) {
       melds.push({
         id: '',
         type: 'set',
-        tiles: [...setTiles.slice(0, 2), okeys[0]],
+        tiles: [...setTiles.slice(0, 2), fakeJokers[0]],
         ownerId: '',
         isLocked: false,
       });
 
-      // 3 regular + 1 okey = 4 tile set
+      // 3 regular + 1 joker = 4 tile set
       if (setTiles.length >= 3) {
         melds.push({
           id: '',
           type: 'set',
-          tiles: [...setTiles.slice(0, 3), okeys[0]],
+          tiles: [...setTiles.slice(0, 3), fakeJokers[0]],
           ownerId: '',
           isLocked: false,
         });
       }
     }
 
-    // Sets with 2 okeys (1 regular + 2 okey = 3 tile set) - less common but valid
-    if (setTiles.length >= 1 && okeys.length >= 2) {
+    // Sets with 2 fake jokers (1 regular + 2 joker = 3 tile set)
+    if (setTiles.length >= 1 && fakeJokers.length >= 2) {
       melds.push({
         id: '',
         type: 'set',
-        tiles: [setTiles[0], okeys[0], okeys[1]],
+        tiles: [setTiles[0], fakeJokers[0], fakeJokers[1]],
         ownerId: '',
         isLocked: false,
       });
@@ -1205,10 +1215,10 @@ function findAllPossibleMelds(tiles: Tile[], okeyTile: Tile | null): Meld[] {
       }
     }
 
-    // Find runs with okey filling gaps
-    if (okeys.length > 0) {
+    // Find runs with fake jokers filling gaps
+    if (fakeJokers.length > 0) {
       for (let start = 0; start < unique.length; start++) {
-        // Try to build a run starting from this tile, using okeys for gaps
+        // Try to build a run starting from this tile, using fake jokers for gaps
         const startNum = unique[start].number;
 
         for (let len = 3; len <= 13; len++) {
@@ -1216,23 +1226,23 @@ function findAllPossibleMelds(tiles: Tile[], okeyTile: Tile | null): Meld[] {
           if (endNum > 13) break;
 
           const runTiles: Tile[] = [];
-          let okeysNeeded = 0;
+          let jokersNeeded = 0;
 
           for (let n = startNum; n <= endNum; n++) {
             const tile = unique.find(t => t.number === n);
             if (tile) {
               runTiles.push(tile);
             } else {
-              okeysNeeded++;
+              jokersNeeded++;
             }
           }
 
-          // Check if we have enough okeys
-          if (okeysNeeded > 0 && okeysNeeded <= okeys.length && runTiles.length >= 2) {
-            // Add okeys to fill gaps
+          // Check if we have enough fake jokers
+          if (jokersNeeded > 0 && jokersNeeded <= fakeJokers.length && runTiles.length >= 2) {
+            // Add fake jokers to fill gaps
             const finalRun = [...runTiles];
-            for (let i = 0; i < okeysNeeded; i++) {
-              finalRun.push(okeys[i]);
+            for (let i = 0; i < jokersNeeded; i++) {
+              finalRun.push(fakeJokers[i]);
             }
 
             if (finalRun.length >= 3) {
