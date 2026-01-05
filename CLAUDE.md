@@ -196,8 +196,14 @@ ssh root@142.93.136.228 "cd /var/www/okey && git pull && npm run build && pm2 re
 - Socket.io server (multiplayer ready)
 - Mobile responsive design
 - Premium game table theme
+- 101 Okey mode (full implementation)
+  - Opening with 101+ points or 5+ pairs
+  - Auto-open feature for easy opening
+  - Lay melds after opening
+  - Fake joker vs real okey distinction
+  - Round scoring and elimination
+  - Game end when tile bag empty
 
 ### Not Started ❌
-- 101 Okey UI (logic exists)
 - Friends/chat system (UI scaffolded)
 - Shop/achievements (UI scaffolded)
