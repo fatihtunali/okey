@@ -1074,22 +1074,34 @@ export function findBestOpeningMelds(tiles: Tile[], okeyTile: Tile | null): Meld
 }
 
 /**
+ * Check if a tile is an okey (wildcard) - either fake joker or real okey tile
+ */
+function isOkeyTile(tile: Tile, okeyTile: Tile | null): boolean {
+  if (tile.isJoker) return true;
+  if (okeyTile && tile.number === okeyTile.number && tile.color === okeyTile.color) return true;
+  return false;
+}
+
+/**
  * Find ALL possible melds from tiles (may have overlapping tiles)
+ * Properly handles jokers and okey tiles as wildcards
  */
 function findAllPossibleMelds(tiles: Tile[], okeyTile: Tile | null): Meld[] {
   const melds: Meld[] = [];
-  const jokers = tiles.filter(t => t.isJoker);
-  const nonJokers = tiles.filter(t => !t.isJoker);
+
+  // Separate okeys (wildcards) from regular tiles
+  const okeys = tiles.filter(t => isOkeyTile(t, okeyTile));
+  const regularTiles = tiles.filter(t => !isOkeyTile(t, okeyTile));
 
   // Find sets (same number, different colors)
   const byNumber = new Map<number, Tile[]>();
-  for (const tile of nonJokers) {
+  for (const tile of regularTiles) {
     const existing = byNumber.get(tile.number) || [];
     byNumber.set(tile.number, [...existing, tile]);
   }
 
   for (const [num, numTiles] of byNumber) {
-    // Get unique colors
+    // Get unique colors for this number
     const uniqueByColor = new Map<TileColor, Tile>();
     for (const tile of numTiles) {
       if (!uniqueByColor.has(tile.color)) {
@@ -1097,37 +1109,56 @@ function findAllPossibleMelds(tiles: Tile[], okeyTile: Tile | null): Meld[] {
       }
     }
 
-    // 3 or 4 tile sets
-    if (uniqueByColor.size >= 3) {
-      const setTiles = Array.from(uniqueByColor.values());
-      // Add all valid combinations (3 and 4 tiles)
+    const setTiles = Array.from(uniqueByColor.values());
+
+    // Pure sets (no okey) - 3 or 4 tiles
+    if (setTiles.length >= 3) {
+      melds.push({
+        id: '',
+        type: 'set',
+        tiles: setTiles.slice(0, 3),
+        ownerId: '',
+        isLocked: false,
+      });
+    }
+    if (setTiles.length >= 4) {
+      melds.push({
+        id: '',
+        type: 'set',
+        tiles: setTiles.slice(0, 4),
+        ownerId: '',
+        isLocked: false,
+      });
+    }
+
+    // Sets with 1 okey (2 regular + 1 okey = 3 tile set)
+    if (setTiles.length >= 2 && okeys.length >= 1) {
+      melds.push({
+        id: '',
+        type: 'set',
+        tiles: [...setTiles.slice(0, 2), okeys[0]],
+        ownerId: '',
+        isLocked: false,
+      });
+
+      // 3 regular + 1 okey = 4 tile set
       if (setTiles.length >= 3) {
         melds.push({
           id: '',
           type: 'set',
-          tiles: setTiles.slice(0, 3),
-          ownerId: '',
-          isLocked: false,
-        });
-      }
-      if (setTiles.length >= 4) {
-        melds.push({
-          id: '',
-          type: 'set',
-          tiles: setTiles.slice(0, 4),
+          tiles: [...setTiles.slice(0, 3), okeys[0]],
           ownerId: '',
           isLocked: false,
         });
       }
     }
 
-    // Sets with jokers (if we have 2 matching colors + joker)
-    if (uniqueByColor.size === 2 && jokers.length > 0) {
-      const setTiles = [...Array.from(uniqueByColor.values()), jokers[0]];
+    // Sets with 2 okeys (1 regular + 2 okey = 3 tile set) - less common but valid
+    if (setTiles.length >= 1 && okeys.length >= 2) {
       melds.push({
         id: '',
         type: 'set',
-        tiles: setTiles,
+        tiles: [setTiles[0], okeys[0], okeys[1]],
         ownerId: '',
         isLocked: false,
       });
@@ -1136,14 +1167,14 @@ function findAllPossibleMelds(tiles: Tile[], okeyTile: Tile | null): Meld[] {
 
   // Find runs (consecutive numbers, same color)
   const byColor = new Map<TileColor, Tile[]>();
-  for (const tile of nonJokers) {
+  for (const tile of regularTiles) {
     const existing = byColor.get(tile.color) || [];
     byColor.set(tile.color, [...existing, tile]);
   }
 
   for (const [color, colorTiles] of byColor) {
     const sorted = [...colorTiles].sort((a, b) => a.number - b.number);
-    // Remove duplicates but keep track of them
+    // Remove duplicates
     const unique: Tile[] = [];
     const seen = new Set<number>();
     for (const t of sorted) {
@@ -1153,13 +1184,12 @@ function findAllPossibleMelds(tiles: Tile[], okeyTile: Tile | null): Meld[] {
       }
     }
 
-    // Find all consecutive sequences of length 3+
+    // Find all consecutive sequences of length 3+ (pure runs)
     for (let start = 0; start < unique.length; start++) {
       const run: Tile[] = [unique[start]];
       for (let j = start + 1; j < unique.length; j++) {
         if (unique[j].number === run[run.length - 1].number + 1) {
           run.push(unique[j]);
-          // Add each valid run length (3+)
           if (run.length >= 3) {
             melds.push({
               id: '',
@@ -1171,6 +1201,50 @@ function findAllPossibleMelds(tiles: Tile[], okeyTile: Tile | null): Meld[] {
           }
         } else {
           break;
+        }
+      }
+    }
+
+    // Find runs with okey filling gaps
+    if (okeys.length > 0) {
+      for (let start = 0; start < unique.length; start++) {
+        // Try to build a run starting from this tile, using okeys for gaps
+        const startNum = unique[start].number;
+
+        for (let len = 3; len <= 13; len++) {
+          const endNum = startNum + len - 1;
+          if (endNum > 13) break;
+
+          const runTiles: Tile[] = [];
+          let okeysNeeded = 0;
+
+          for (let n = startNum; n <= endNum; n++) {
+            const tile = unique.find(t => t.number === n);
+            if (tile) {
+              runTiles.push(tile);
+            } else {
+              okeysNeeded++;
+            }
+          }
+
+          // Check if we have enough okeys
+          if (okeysNeeded > 0 && okeysNeeded <= okeys.length && runTiles.length >= 2) {
+            // Add okeys to fill gaps
+            const finalRun = [...runTiles];
+            for (let i = 0; i < okeysNeeded; i++) {
+              finalRun.push(okeys[i]);
+            }
+
+            if (finalRun.length >= 3) {
+              melds.push({
+                id: '',
+                type: 'run',
+                tiles: finalRun,
+                ownerId: '',
+                isLocked: false,
+              });
+            }
+          }
         }
       }
     }
