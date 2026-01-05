@@ -21,6 +21,7 @@ import {
   ai101Move,
   validateMeldStructure,
   calculateMeldsPoints,
+  findBestOpeningMelds,
 } from '@/lib/game/okey101';
 import { sortTiles } from '@/lib/game/tiles';
 
@@ -389,6 +390,47 @@ export function useGame101(options: UseGame101Options) {
     return calculateMeldsPoints(pendingMelds, game.okeyTile);
   }, [game, pendingMelds]);
 
+  // Calculate potential auto-open points (without manual selection)
+  const getAutoOpenInfo = useCallback((): { points: number; melds: Meld[] } => {
+    if (!game) return { points: 0, melds: [] };
+    const player = game.players.find(p => p.id === options.playerId);
+    if (!player) return { points: 0, melds: [] };
+
+    const bestMelds = findBestOpeningMelds(player.tiles, game.okeyTile);
+    const points = calculateMeldsPoints(bestMelds, game.okeyTile);
+    return { points, melds: bestMelds };
+  }, [game, options.playerId]);
+
+  // Auto-open hand (find best melds automatically)
+  const handleAutoOpen = useCallback(() => {
+    if (!game) return;
+    const player = game.players.find(p => p.id === options.playerId);
+    if (!player || player.hasOpened) return;
+
+    const bestMelds = findBestOpeningMelds(player.tiles, game.okeyTile);
+    const points = calculateMeldsPoints(bestMelds, game.okeyTile);
+
+    if (points < 101) {
+      setError(`Otomatik açılış için yeterli puan yok (${points}/101)`);
+      return;
+    }
+
+    if (bestMelds.length === 0) {
+      setError('Geçerli grup bulunamadı');
+      return;
+    }
+
+    try {
+      const newGame = openHand(game, options.playerId, bestMelds, 'series');
+      setGame(newGame);
+      setPendingMelds([]);
+      setSelectedTileIds(new Set());
+      setError(null);
+    } catch (err) {
+      setError((err as Error).message);
+    }
+  }, [game, options.playerId]);
+
   // Open hand with pending melds
   const handleOpenHand = useCallback((openingType: 'series' | 'pairs') => {
     if (!game) return;
@@ -574,12 +616,14 @@ export function useGame101(options: UseGame101Options) {
     handleSortByGroups,
     handleSortByRuns,
     handleOpenHand,
+    handleAutoOpen,
     handleLayMeld,
     handleAddToMeld,
     handleNextRound,
     addPendingMeld,
     removePendingMeld,
     getPendingMeldsPoints,
+    getAutoOpenInfo,
     clearSelection,
     getCurrentPlayerStatus,
     setShowRoundResults,

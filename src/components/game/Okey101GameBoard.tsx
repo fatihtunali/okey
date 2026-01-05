@@ -26,6 +26,8 @@ interface Okey101GameBoardProps {
   onSortByGroups?: () => void;
   onSortByRuns?: () => void;
   onOpenHand?: (type: 'series' | 'pairs') => void;
+  onAutoOpen?: () => void;
+  getAutoOpenInfo?: () => { points: number; melds: Meld[] };
   onLayMeld?: (type: 'set' | 'run') => void;
   onAddToMeld?: (meldId: string, position: 'start' | 'end') => void;
   onAddPendingMeld?: (type: 'set' | 'run') => void;
@@ -226,11 +228,14 @@ function ActionButtons101({
   hasSelectedTiles,
   pendingMeldsPoints,
   canOpen,
+  autoOpenPoints,
+  canAutoOpen,
   onDrawFromPile,
   onDrawFromDiscard,
   onDiscard,
   onAddPendingMeld,
   onOpenHand,
+  onAutoOpen,
   onLayMeld,
   onClearSelection,
   canDrawFromDiscard,
@@ -240,11 +245,14 @@ function ActionButtons101({
   hasSelectedTiles: boolean;
   pendingMeldsPoints: number;
   canOpen: boolean;
+  autoOpenPoints: number;
+  canAutoOpen: boolean;
   onDrawFromPile: () => void;
   onDrawFromDiscard: () => void;
   onDiscard: () => void;
   onAddPendingMeld: (type: 'set' | 'run') => void;
   onOpenHand: (type: 'series' | 'pairs') => void;
+  onAutoOpen: () => void;
   onLayMeld: (type: 'set' | 'run') => void;
   onClearSelection: () => void;
   canDrawFromDiscard: boolean;
@@ -280,6 +288,25 @@ function ActionButtons101({
       {/* Before opening */}
       {!hasOpened && (
         <>
+          {/* Auto-open button - always visible when can auto-open */}
+          {canAutoOpen && (
+            <motion.button
+              onClick={onAutoOpen}
+              className="px-4 py-2 bg-gradient-to-b from-green-500 to-green-600 text-white font-bold rounded-lg shadow-lg text-sm"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              🎯 Otomatik Aç ({autoOpenPoints} puan)
+            </motion.button>
+          )}
+
+          {/* Show potential points even if can't auto-open */}
+          {!canAutoOpen && autoOpenPoints > 0 && (
+            <div className="px-3 py-1.5 bg-stone-700 text-amber-400 rounded-lg text-xs">
+              Potansiyel: {autoOpenPoints}/101 puan
+            </div>
+          )}
+
           {hasSelectedTiles && (
             <>
               <motion.button
@@ -539,6 +566,8 @@ export default function Okey101GameBoard({
   onSortByGroups,
   onSortByRuns,
   onOpenHand,
+  onAutoOpen,
+  getAutoOpenInfo,
   onLayMeld,
   onAddToMeld,
   onAddPendingMeld,
@@ -583,6 +612,10 @@ export default function Okey101GameBoard({
   const pendingPoints = getPendingMeldsPoints?.() || 0;
   const canOpen = pendingPoints >= 101 && pendingMelds.length > 0;
   const hasSelectedTiles = selectedTileIds.size > 0;
+
+  // Get auto-open info
+  const autoOpenInfo = getAutoOpenInfo?.() || { points: 0, melds: [] };
+  const canAutoOpen = autoOpenInfo.points >= 101 && autoOpenInfo.melds.length > 0;
 
   return (
     <div className="w-full h-full min-h-screen bg-gradient-to-b from-stone-900 via-green-950 to-stone-900 p-2 sm:p-4 flex flex-col">
@@ -800,11 +833,14 @@ export default function Okey101GameBoard({
               hasSelectedTiles={hasSelectedTiles}
               pendingMeldsPoints={pendingPoints}
               canOpen={canOpen}
+              autoOpenPoints={autoOpenInfo.points}
+              canAutoOpen={canAutoOpen}
               onDrawFromPile={onDrawFromPile}
               onDrawFromDiscard={onDrawFromDiscard}
               onDiscard={() => onDiscard()}
               onAddPendingMeld={onAddPendingMeld || (() => {})}
               onOpenHand={onOpenHand || (() => {})}
+              onAutoOpen={onAutoOpen || (() => {})}
               onLayMeld={onLayMeld || (() => {})}
               onClearSelection={onClearSelection || (() => {})}
               canDrawFromDiscard={canDrawFromDiscard}

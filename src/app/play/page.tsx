@@ -459,6 +459,8 @@ function PlayContent() {
             onSortByGroups={okey101Game.handleSortByGroups}
             onSortByRuns={okey101Game.handleSortByRuns}
             onOpenHand={okey101Game.handleOpenHand}
+            onAutoOpen={okey101Game.handleAutoOpen}
+            getAutoOpenInfo={okey101Game.getAutoOpenInfo}
             onLayMeld={okey101Game.handleLayMeld}
             onAddToMeld={okey101Game.handleAddToMeld}
             onAddPendingMeld={okey101Game.addPendingMeld}

@@ -1045,7 +1045,142 @@ export function ai101Move(game: GameState): GameState {
 }
 
 /**
- * Find possible melds from tiles
+ * Find best non-overlapping melds for opening (greedy algorithm)
+ * Returns melds that don't share any tiles
+ */
+export function findBestOpeningMelds(tiles: Tile[], okeyTile: Tile | null): Meld[] {
+  const allMelds = findAllPossibleMelds(tiles, okeyTile);
+
+  // Sort melds by points (highest first)
+  allMelds.sort((a, b) => {
+    const pointsA = a.tiles.reduce((sum, t) => sum + (t.isJoker && okeyTile ? okeyTile.number : t.number), 0);
+    const pointsB = b.tiles.reduce((sum, t) => sum + (t.isJoker && okeyTile ? okeyTile.number : t.number), 0);
+    return pointsB - pointsA;
+  });
+
+  const usedTileIds = new Set<string>();
+  const selectedMelds: Meld[] = [];
+
+  for (const meld of allMelds) {
+    // Check if any tile in this meld is already used
+    const hasOverlap = meld.tiles.some(t => usedTileIds.has(t.id));
+    if (!hasOverlap) {
+      selectedMelds.push(meld);
+      meld.tiles.forEach(t => usedTileIds.add(t.id));
+    }
+  }
+
+  return selectedMelds;
+}
+
+/**
+ * Find ALL possible melds from tiles (may have overlapping tiles)
+ */
+function findAllPossibleMelds(tiles: Tile[], okeyTile: Tile | null): Meld[] {
+  const melds: Meld[] = [];
+  const jokers = tiles.filter(t => t.isJoker);
+  const nonJokers = tiles.filter(t => !t.isJoker);
+
+  // Find sets (same number, different colors)
+  const byNumber = new Map<number, Tile[]>();
+  for (const tile of nonJokers) {
+    const existing = byNumber.get(tile.number) || [];
+    byNumber.set(tile.number, [...existing, tile]);
+  }
+
+  for (const [num, numTiles] of byNumber) {
+    // Get unique colors
+    const uniqueByColor = new Map<TileColor, Tile>();
+    for (const tile of numTiles) {
+      if (!uniqueByColor.has(tile.color)) {
+        uniqueByColor.set(tile.color, tile);
+      }
+    }
+
+    // 3 or 4 tile sets
+    if (uniqueByColor.size >= 3) {
+      const setTiles = Array.from(uniqueByColor.values());
+      // Add all valid combinations (3 and 4 tiles)
+      if (setTiles.length >= 3) {
+        melds.push({
+          id: '',
+          type: 'set',
+          tiles: setTiles.slice(0, 3),
+          ownerId: '',
+          isLocked: false,
+        });
+      }
+      if (setTiles.length >= 4) {
+        melds.push({
+          id: '',
+          type: 'set',
+          tiles: setTiles.slice(0, 4),
+          ownerId: '',
+          isLocked: false,
+        });
+      }
+    }
+
+    // Sets with jokers (if we have 2 matching colors + joker)
+    if (uniqueByColor.size === 2 && jokers.length > 0) {
+      const setTiles = [...Array.from(uniqueByColor.values()), jokers[0]];
+      melds.push({
+        id: '',
+        type: 'set',
+        tiles: setTiles,
+        ownerId: '',
+        isLocked: false,
+      });
+    }
+  }
+
+  // Find runs (consecutive numbers, same color)
+  const byColor = new Map<TileColor, Tile[]>();
+  for (const tile of nonJokers) {
+    const existing = byColor.get(tile.color) || [];
+    byColor.set(tile.color, [...existing, tile]);
+  }
+
+  for (const [color, colorTiles] of byColor) {
+    const sorted = [...colorTiles].sort((a, b) => a.number - b.number);
+    // Remove duplicates but keep track of them
+    const unique: Tile[] = [];
+    const seen = new Set<number>();
+    for (const t of sorted) {
+      if (!seen.has(t.number)) {
+        unique.push(t);
+        seen.add(t.number);
+      }
+    }
+
+    // Find all consecutive sequences of length 3+
+    for (let start = 0; start < unique.length; start++) {
+      const run: Tile[] = [unique[start]];
+      for (let j = start + 1; j < unique.length; j++) {
+        if (unique[j].number === run[run.length - 1].number + 1) {
+          run.push(unique[j]);
+          // Add each valid run length (3+)
+          if (run.length >= 3) {
+            melds.push({
+              id: '',
+              type: 'run',
+              tiles: [...run],
+              ownerId: '',
+              isLocked: false,
+            });
+          }
+        } else {
+          break;
+        }
+      }
+    }
+  }
+
+  return melds;
+}
+
+/**
+ * Find possible melds from tiles (legacy - used by AI)
  */
 function findPossibleMelds(tiles: Tile[], okeyTile: Tile | null): Meld[] {
   const melds: Meld[] = [];
