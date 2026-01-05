@@ -36,6 +36,7 @@ export interface GamePlayer {
   aiDifficulty?: 'easy' | 'medium' | 'hard';
   isConnected: boolean;
   isReady: boolean;
+  lastDiscardedTile?: Tile | null;  // Last tile this player discarded (visible until next discard)
 
   // 101 Okey specific
   score101?: number;      // Cumulative score in 101 mode

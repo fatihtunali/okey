@@ -330,7 +330,8 @@ export function discardTile(
 
   const updatedPlayers = game.players.map((p, index) => {
     if (index === playerIndex) {
-      return { ...p, tiles: newPlayerTiles };
+      // Update current player: remove tile and set lastDiscardedTile
+      return { ...p, tiles: newPlayerTiles, lastDiscardedTile: discardedTile };
     }
     return p;
   });

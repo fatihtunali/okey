@@ -176,14 +176,14 @@ export const TurkishTile = memo(function TurkishTile({
         whileHover={{ y: -4, scale: 1.02 }}
         whileTap={{ scale: 0.98 }}
       >
-        {/* Joker star pattern */}
-        <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className="text-red-600 text-2xl">★</span>
-          <span className="text-xs font-bold text-amber-700 mt-0.5">OKEY</span>
+        {/* Joker asterisk symbol */}
+        <div className="absolute inset-0 flex items-center justify-center">
+          <span className={cn(
+            'font-black text-red-600',
+            sizeConfig.text,
+            'scale-150'
+          )}>*</span>
         </div>
-        {/* Corner dots */}
-        <div className="absolute top-1 left-1 w-2 h-2 bg-red-500 rounded-full" />
-        <div className="absolute bottom-1 right-1 w-2 h-2 bg-red-500 rounded-full" />
       </motion.div>
     );
   }

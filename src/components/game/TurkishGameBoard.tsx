@@ -634,11 +634,13 @@ export const TurkishGameBoard = memo(function TurkishGameBoard({
   const topOpp = opponents.find(o => o.position === 'top');
   const rightOpp = opponents.find(o => o.position === 'right');
 
-  const lastDiscardedTile = game.discardPile.length > 0
+  // The tile that can be picked up from discard pile (last discarded tile globally)
+  const pickableTile = game.discardPile.length > 0
     ? game.discardPile[game.discardPile.length - 1]
     : null;
 
-  const canPickFromLeftOpponent = canDraw && lastDiscardedTile !== null;
+  // Can only pick from left opponent (previous player in turn order)
+  const canPickFromLeftOpponent = canDraw && leftOpp?.player.lastDiscardedTile !== null && leftOpp?.player.lastDiscardedTile !== undefined;
 
   return (
     <div className="w-full h-[100dvh] flex flex-col overflow-hidden bg-stone-950">
@@ -773,7 +775,7 @@ export const TurkishGameBoard = memo(function TurkishGameBoard({
                 isThinking={isProcessingAI && game.currentTurn === topOpp.index}
                 position="top"
                 okeyTile={game.okeyTile}
-                discardedTile={lastDiscardedTile}
+                discardedTile={topOpp.player.lastDiscardedTile}
               />
             )}
           </div>
@@ -789,7 +791,7 @@ export const TurkishGameBoard = memo(function TurkishGameBoard({
                   isThinking={isProcessingAI && game.currentTurn === leftOpp.index}
                   position="left"
                   okeyTile={game.okeyTile}
-                  discardedTile={lastDiscardedTile}
+                  discardedTile={leftOpp.player.lastDiscardedTile}
                   canPickUp={canPickFromLeftOpponent}
                   onPickUp={onDrawFromDiscard}
                 />
@@ -803,7 +805,7 @@ export const TurkishGameBoard = memo(function TurkishGameBoard({
               okeyTile={game.okeyTile}
               canDraw={canDraw}
               onDrawFromPile={onDrawFromPile}
-              lastDiscardedTile={lastDiscardedTile}
+              lastDiscardedTile={pickableTile}
               canPickDiscard={canPickFromLeftOpponent}
               onPickDiscard={onDrawFromDiscard}
             />
@@ -817,14 +819,14 @@ export const TurkishGameBoard = memo(function TurkishGameBoard({
                   isThinking={isProcessingAI && game.currentTurn === rightOpp.index}
                   position="right"
                   okeyTile={game.okeyTile}
-                  discardedTile={lastDiscardedTile}
+                  discardedTile={rightOpp.player.lastDiscardedTile}
                 />
               )}
             </div>
           </div>
 
           {/* Current player info bar */}
-          <div className="flex justify-center py-1 sm:py-2">
+          <div className="flex justify-center items-center gap-2 py-1 sm:py-2">
             <div className="flex items-center gap-2 sm:gap-3 bg-stone-900/80 px-2 sm:px-4 py-1 sm:py-2 rounded-full border border-amber-500/30">
               <span className="text-lg sm:text-2xl">👤</span>
               <div>
@@ -836,6 +838,15 @@ export const TurkishGameBoard = memo(function TurkishGameBoard({
                 </div>
               </div>
             </div>
+            {/* Current player's last discarded tile */}
+            {currentPlayer?.lastDiscardedTile && (
+              <div className="flex flex-col items-center">
+                <div className="text-[8px] text-stone-500 mb-0.5">Attığın</div>
+                <div className="transform scale-75">
+                  <TurkishTile tile={currentPlayer.lastDiscardedTile} okeyTile={game.okeyTile} size="sm" />
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -854,7 +865,7 @@ export const TurkishGameBoard = memo(function TurkishGameBoard({
           canSelect={game.turnPhase === 'discard'}
           canDiscard={isMyTurn && game.turnPhase === 'discard' && !isProcessingAI}
           onDiscardTile={onDiscardById}
-          leftOpponentDiscard={lastDiscardedTile}
+          leftOpponentDiscard={leftOpp?.player.lastDiscardedTile}
           canPickFromLeft={canPickFromLeftOpponent}
           onPickFromLeft={onDrawFromDiscard}
         />
