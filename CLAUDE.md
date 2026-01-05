@@ -165,6 +165,25 @@ stake:
 
 **Error Codes:** `NOT_YOUR_TURN`, `WRONG_PHASE`, `TILE_NOT_FOUND`, `INVALID_HAND`, `GAME_FULL`, `NOT_ENOUGH_CHIPS`
 
+## Deployment
+
+**Server:** 142.93.136.228 (DigitalOcean)
+**Production URL:** http://142.93.136.228:3009
+
+### Deploy Process
+Always deploy via git push (NOT scp):
+```bash
+git add .
+git commit -m "Your commit message"
+git push
+ssh root@142.93.136.228 "cd /var/www/okey && git pull && npm run build && pm2 restart okey"
+```
+
+### Server Setup
+- PM2 process name: `okey`
+- App directory: `/var/www/okey`
+- Database: PostgreSQL (configured in .env)
+
 ## Implementation Status
 
 ### Done ✅
@@ -172,12 +191,13 @@ stake:
 - UI components (GameBoard, Tile, PlayerRack)
 - Single-player with AI opponents
 - Drag-and-drop rack
+- NextAuth authentication
+- PostgreSQL database connection
+- Socket.io server (multiplayer ready)
+- Mobile responsive design
+- Premium game table theme
 
 ### Not Started ❌
-- Database connection (Prisma schema ready)
-- API routes (see openapi.yaml)
-- NextAuth integration
-- Socket.io server
 - 101 Okey UI (logic exists)
-- Friends/chat system
-- Shop/achievements
+- Friends/chat system (UI scaffolded)
+- Shop/achievements (UI scaffolded)

@@ -20,7 +20,9 @@
       "Bash(npx prisma migrate:*)",
       "Bash(npx prisma generate:*)",
       "Bash(xargs git show --stat)",
-      "WebFetch(domain:www.behance.net)"
+      "WebFetch(domain:www.behance.net)",
+      "WebFetch(domain:www.betconstruct.com)",
+      "WebFetch(domain:dribbble.com)"
     ]
   }
 }
