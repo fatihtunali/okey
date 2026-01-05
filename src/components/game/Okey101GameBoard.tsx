@@ -374,17 +374,23 @@ const PlayerRack101 = memo(function PlayerRack101({
   selectedTileIds,
   onTileSelect,
   onTileMove,
+  onDiscardTile,
   okeyTile,
+  canDiscard,
 }: {
   tiles: TileType[];
   rackLayout: (string | null)[];
   selectedTileIds: Set<string>;
   onTileSelect: (tile: TileType) => void;
   onTileMove?: (fromIndex: number, toIndex: number) => void;
+  onDiscardTile?: (tileId: string) => void;
   okeyTile?: TileType | null;
+  canDiscard?: boolean;
 }) {
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+  const [draggedTileId, setDraggedTileId] = useState<string | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+  const [dragOverDiscard, setDragOverDiscard] = useState(false);
 
   const tileMap = useMemo(() => {
     const map = new Map<string, TileType>();
@@ -392,8 +398,27 @@ const PlayerRack101 = memo(function PlayerRack101({
     return map;
   }, [tiles]);
 
-  const handleDragStart = (e: React.DragEvent, index: number) => {
+  // Handle double-click to discard
+  const handleDoubleClick = (tile: TileType) => {
+    if (canDiscard && onDiscardTile) {
+      onDiscardTile(tile.id);
+    }
+  };
+
+  // Handle discard drop zone
+  const handleDiscardDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    if (draggedTileId && canDiscard && onDiscardTile) {
+      onDiscardTile(draggedTileId);
+    }
+    setDragOverDiscard(false);
+    setDraggedIndex(null);
+    setDraggedTileId(null);
+  };
+
+  const handleDragStart = (e: React.DragEvent, index: number, tileId: string) => {
     setDraggedIndex(index);
+    setDraggedTileId(tileId);
     e.dataTransfer.effectAllowed = 'move';
   };
 
@@ -413,7 +438,9 @@ const PlayerRack101 = memo(function PlayerRack101({
 
   const handleDragEnd = () => {
     setDraggedIndex(null);
+    setDraggedTileId(null);
     setDragOverIndex(null);
+    setDragOverDiscard(false);
   };
 
   // Split into 2 rows of 14
@@ -422,6 +449,31 @@ const PlayerRack101 = memo(function PlayerRack101({
 
   return (
     <div className="flex flex-col gap-1 sm:gap-2">
+      {/* Discard drop zone */}
+      {canDiscard && (
+        <motion.div
+          className={cn(
+            'mx-auto mb-2 w-16 h-20 sm:w-20 sm:h-24 rounded-xl flex flex-col items-center justify-center',
+            'border-2 border-dashed transition-all cursor-pointer',
+            dragOverDiscard
+              ? 'bg-red-500/40 border-red-400 scale-105'
+              : 'bg-red-900/30 border-red-500/50'
+          )}
+          onDrop={handleDiscardDrop}
+          onDragOver={(e) => {
+            e.preventDefault();
+            setDragOverDiscard(true);
+          }}
+          onDragLeave={() => setDragOverDiscard(false)}
+          animate={dragOverDiscard ? { scale: 1.05 } : { scale: 1 }}
+        >
+          <span className="text-2xl sm:text-3xl">🗑️</span>
+          <span className="text-[10px] sm:text-xs text-red-300 font-bold">
+            {dragOverDiscard ? 'Bırak!' : 'Sürükle'}
+          </span>
+        </motion.div>
+      )}
+
       {[row1, row2].map((row, rowIndex) => (
         <div key={rowIndex} className="flex justify-center gap-0.5 sm:gap-1">
           {row.map((tileId, slotIndex) => {
@@ -442,7 +494,7 @@ const PlayerRack101 = memo(function PlayerRack101({
                   isDragging && 'opacity-50'
                 )}
                 draggable={!!tile}
-                onDragStart={(e) => tile && handleDragStart(e as any, index)}
+                onDragStart={(e) => tile && handleDragStart(e as any, index, tile.id)}
                 onDragOver={(e) => handleDragOver(e as any, index)}
                 onDrop={(e) => handleDrop(e as any, index)}
                 onDragEnd={handleDragEnd}
@@ -456,6 +508,7 @@ const PlayerRack101 = memo(function PlayerRack101({
                       isSelected && 'ring-2 ring-blue-400 rounded-md'
                     )}
                     onClick={() => onTileSelect(tile)}
+                    onDoubleClick={() => handleDoubleClick(tile)}
                   >
                     <TurkishTile tile={tile} okeyTile={okeyTile} size="sm" />
                   </motion.div>
@@ -731,7 +784,9 @@ export default function Okey101GameBoard({
             selectedTileIds={selectedTileIds}
             onTileSelect={onTileSelect}
             onTileMove={onTileMove}
+            onDiscardTile={(tileId) => onDiscard(tileId)}
             okeyTile={game.okeyTile}
+            canDiscard={isPlayerTurn && (game.turnPhase101 === 'play' || game.turnPhase101 === 'mustDiscard')}
           />
         )}
       </div>

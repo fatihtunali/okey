@@ -22,7 +22,9 @@
       "Bash(xargs git show --stat)",
       "WebFetch(domain:www.behance.net)",
       "WebFetch(domain:www.betconstruct.com)",
-      "WebFetch(domain:dribbble.com)"
+      "WebFetch(domain:dribbble.com)",
+      "WebFetch(domain:www.altinstar.com)",
+      "WebFetch(domain:101elit.com)"
     ]
   }
 }
