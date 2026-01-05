@@ -433,9 +433,6 @@ interface CenterAreaProps {
   okeyTile?: TileType | null;
   canDraw: boolean;
   onDrawFromPile: () => void;
-  lastDiscardedTile?: TileType | null;
-  canPickDiscard?: boolean;
-  onPickDiscard?: () => void;
 }
 
 function CenterArea({
@@ -444,12 +441,9 @@ function CenterArea({
   okeyTile,
   canDraw,
   onDrawFromPile,
-  lastDiscardedTile,
-  canPickDiscard,
-  onPickDiscard,
 }: CenterAreaProps) {
   return (
-    <div className="flex-1 flex items-center justify-center gap-2 sm:gap-8">
+    <div className="flex-1 flex items-center justify-center gap-4 sm:gap-8">
       {/* Draw pile */}
       <motion.button
         onClick={onDrawFromPile}
@@ -467,7 +461,7 @@ function CenterArea({
             <div
               key={i}
               className={cn(
-                'w-10 h-14 sm:w-16 sm:h-20 rounded-lg',
+                'w-12 h-16 sm:w-16 sm:h-20 rounded-lg',
                 i === 0 ? 'relative' : 'absolute',
                 'bg-gradient-to-br from-amber-800 via-amber-700 to-amber-900',
                 'border-2',
@@ -482,7 +476,7 @@ function CenterArea({
             >
               {i === 0 && (
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="text-amber-400 font-bold text-[10px] sm:text-sm">OKEY</div>
+                  <div className="text-amber-400 font-bold text-xs sm:text-sm">OKEY</div>
                 </div>
               )}
             </div>
@@ -490,17 +484,17 @@ function CenterArea({
         </div>
 
         {/* Count */}
-        <div className="mt-1.5 sm:mt-2 bg-stone-900/80 text-amber-300 text-xs sm:text-sm font-bold px-2 sm:px-3 py-0.5 sm:py-1 rounded-full border border-amber-600/50">
+        <div className="mt-2 bg-stone-900/80 text-amber-300 text-xs sm:text-sm font-bold px-3 py-1 rounded-full border border-amber-600/50">
           {tileBagCount}
         </div>
 
         {canDraw && (
           <motion.div
-            className="mt-0.5 sm:mt-1 text-green-400 text-[10px] sm:text-xs font-medium"
+            className="mt-1 text-green-400 text-xs font-medium"
             animate={{ opacity: [1, 0.5, 1] }}
             transition={{ repeat: Infinity, duration: 1.5 }}
           >
-            Çek
+            Taş Çek
           </motion.div>
         )}
       </motion.button>
@@ -508,26 +502,26 @@ function CenterArea({
       {/* Indicator tile with stand */}
       {indicatorTile && (
         <div className="flex flex-col items-center">
-          <div className="text-[8px] sm:text-xs text-amber-300/80 font-medium mb-0.5 sm:mb-1">
+          <div className="text-[10px] sm:text-xs text-amber-300/80 font-medium mb-1">
             GÖSTERGE
           </div>
 
           {/* Tile on stand */}
           <div className="relative">
-            <TurkishTile tile={indicatorTile} size="md" />
+            <TurkishTile tile={indicatorTile} size="lg" />
             {/* Wooden stand */}
-            <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-10 sm:w-12 h-1.5 sm:h-2 bg-gradient-to-b from-amber-700 to-amber-900 rounded-b border-x border-b border-amber-600" />
+            <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-12 h-2 bg-gradient-to-b from-amber-700 to-amber-900 rounded-b border-x border-b border-amber-600" />
           </div>
 
           {/* Okey info */}
           {okeyTile && (
             <div className={cn(
-              'mt-1.5 sm:mt-2 flex items-center gap-1 sm:gap-1.5 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-lg',
+              'mt-2 flex items-center gap-1.5 px-2 py-1 rounded-lg',
               'bg-stone-900/80 border border-amber-500/30'
             )}>
-              <span className="text-amber-300 text-[8px] sm:text-xs">Okey:</span>
+              <span className="text-amber-300 text-[10px] sm:text-xs">Okey:</span>
               <span className={cn(
-                'font-bold text-xs sm:text-sm',
+                'font-bold text-sm',
                 okeyTile.color === 'red' && 'text-red-400',
                 okeyTile.color === 'blue' && 'text-blue-400',
                 okeyTile.color === 'yellow' && 'text-amber-400',
@@ -539,47 +533,6 @@ function CenterArea({
           )}
         </div>
       )}
-
-      {/* Discard pile - shows last discarded tile prominently */}
-      <motion.button
-        onClick={canPickDiscard ? onPickDiscard : undefined}
-        disabled={!canPickDiscard}
-        className={cn(
-          'flex flex-col items-center'
-        )}
-        whileHover={canPickDiscard ? { scale: 1.05 } : {}}
-        whileTap={canPickDiscard ? { scale: 0.95 } : {}}
-      >
-        <div className="text-[8px] sm:text-xs text-amber-300/80 font-medium mb-0.5 sm:mb-1">
-          ATILAN
-        </div>
-        <div className={cn(
-          'w-10 h-14 sm:w-16 sm:h-20 rounded-lg',
-          'flex items-center justify-center',
-          'bg-stone-800/80 border-2',
-          lastDiscardedTile
-            ? canPickDiscard
-              ? 'border-green-400 shadow-lg shadow-green-500/30'
-              : 'border-amber-600'
-            : 'border-stone-600/50',
-          canPickDiscard && 'cursor-pointer'
-        )}>
-          {lastDiscardedTile ? (
-            <TurkishTile tile={lastDiscardedTile} okeyTile={okeyTile} size="sm" />
-          ) : (
-            <span className="text-stone-500 text-[10px] sm:text-xs">Boş</span>
-          )}
-        </div>
-        {canPickDiscard && lastDiscardedTile && (
-          <motion.div
-            className="mt-0.5 sm:mt-1 text-[10px] sm:text-xs text-green-400 font-bold"
-            animate={{ opacity: [1, 0.5, 1] }}
-            transition={{ repeat: Infinity, duration: 1 }}
-          >
-            Al
-          </motion.div>
-        )}
-      </motion.button>
     </div>
   );
 }
@@ -633,11 +586,6 @@ export const TurkishGameBoard = memo(function TurkishGameBoard({
   const leftOpp = opponents.find(o => o.position === 'left');
   const topOpp = opponents.find(o => o.position === 'top');
   const rightOpp = opponents.find(o => o.position === 'right');
-
-  // The tile that can be picked up from discard pile (last discarded tile globally)
-  const pickableTile = game.discardPile.length > 0
-    ? game.discardPile[game.discardPile.length - 1]
-    : null;
 
   // Can only pick from left opponent (previous player in turn order)
   const canPickFromLeftOpponent = canDraw && leftOpp?.player.lastDiscardedTile !== null && leftOpp?.player.lastDiscardedTile !== undefined;
@@ -805,9 +753,6 @@ export const TurkishGameBoard = memo(function TurkishGameBoard({
               okeyTile={game.okeyTile}
               canDraw={canDraw}
               onDrawFromPile={onDrawFromPile}
-              lastDiscardedTile={pickableTile}
-              canPickDiscard={canPickFromLeftOpponent}
-              onPickDiscard={onDrawFromDiscard}
             />
 
             {/* Right opponent */}
