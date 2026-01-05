@@ -1,11 +1,12 @@
 'use client';
 
-import { Suspense, useEffect, useState } from 'react';
+import { Suspense, useEffect, useState, useCallback } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
-import { TurkishGameBoard } from '@/components/game';
+import { TurkishGameBoard, GameChat } from '@/components/game';
 import { useGame } from '@/hooks/useGame';
 import { useGame as useApiGame } from '@/hooks/useGames';
+import { useSocket } from '@/lib/socket';
 import { randomId } from '@/lib/utils';
 import * as api from '@/lib/api/games';
 
@@ -16,11 +17,33 @@ function PlayContent() {
 
   const mode = (searchParams.get('mode') as 'regular' | 'okey101') || 'regular';
   const gameId = searchParams.get('gameId');
+  const isMultiplayer = searchParams.get('multiplayer') === 'true';
 
   const [playerName, setPlayerName] = useState('');
   const [playerId] = useState(() => `player_${randomId()}`);
   const [gameStarted, setGameStarted] = useState(false);
   const [apiError, setApiError] = useState<string | null>(null);
+
+  // Socket connection for multiplayer
+  const {
+    isConnected,
+    roomPlayers,
+    connect,
+    disconnect,
+    joinGame: joinSocketRoom,
+    leaveGame: leaveSocketRoom,
+    setReady: setSocketReady,
+    syncGameState,
+    emitDrawTile,
+    emitDiscardTile,
+    emitTurnChanged,
+    emitGameFinished,
+    onGameStateSync,
+    onPlayerJoined,
+    onPlayerLeft,
+    onPlayerDisconnected,
+    onAllPlayersReady,
+  } = useSocket();
 
   // Use session name if available
   useEffect(() => {
@@ -28,6 +51,25 @@ function PlayContent() {
       setPlayerName(session.user.name);
     }
   }, [session]);
+
+  // Connect to socket for multiplayer games
+  useEffect(() => {
+    if (isMultiplayer || gameId) {
+      connect();
+    }
+    return () => {
+      if (gameId) {
+        leaveSocketRoom(gameId, session?.user?.id || playerId);
+      }
+    };
+  }, [isMultiplayer, gameId, connect, leaveSocketRoom, session?.user?.id, playerId]);
+
+  // Join socket room when game is available
+  useEffect(() => {
+    if (gameId && isConnected) {
+      joinSocketRoom(gameId, session?.user?.id || playerId, playerName || 'Oyuncu');
+    }
+  }, [gameId, isConnected, joinSocketRoom, session?.user?.id, playerId, playerName]);
 
   // API game state (for multiplayer)
   const { data: apiGame, isLoading: isLoadingGame, error: gameError, refetch: refetchGame } = useApiGame(gameId);
@@ -338,6 +380,19 @@ function PlayContent() {
         ← Çıkış
       </button>
 
+      {/* Connection status for multiplayer */}
+      {(isMultiplayer || gameId) && (
+        <div className="absolute top-2 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 px-3 py-1 bg-stone-900/80 rounded text-xs">
+          <span className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`} />
+          <span className="text-amber-200">
+            {isConnected ? 'Bağlı' : 'Bağlanıyor...'}
+          </span>
+          {roomPlayers.length > 0 && (
+            <span className="text-amber-400/60">({roomPlayers.length} oyuncu)</span>
+          )}
+        </div>
+      )}
+
       {/* Error overlay */}
       {error && (
         <div className="absolute top-2 right-2 z-50 text-red-400 text-xs bg-red-900/80 px-2 py-1 rounded">
@@ -364,6 +419,15 @@ function PlayContent() {
             timeRemaining={timeRemaining}
             isProcessingAI={isProcessingAI && !isApiGame}
           />
+      )}
+
+      {/* Chat for multiplayer games */}
+      {(isMultiplayer || gameId) && gameId && (
+        <GameChat
+          gameId={gameId}
+          playerId={session?.user?.id || playerId}
+          playerName={playerName || session?.user?.name || 'Oyuncu'}
+        />
       )}
     </div>
   );
