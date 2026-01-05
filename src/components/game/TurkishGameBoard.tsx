@@ -38,7 +38,7 @@ interface OpponentAvatarProps {
   isCurrentTurn: boolean;
   isThinking?: boolean;
   position: 'left' | 'top' | 'right';
-  lastDiscard?: TileType | null;
+  discardedTile?: TileType | null;
   okeyTile?: TileType | null;
   canPickUp?: boolean;
   onPickUp?: () => void;
@@ -49,7 +49,7 @@ function OpponentAvatar({
   isCurrentTurn,
   isThinking,
   position,
-  lastDiscard,
+  discardedTile,
   okeyTile,
   canPickUp,
   onPickUp,
@@ -113,30 +113,37 @@ function OpponentAvatar({
         )}
       </div>
 
-      {/* Last discard (only for left opponent - pickable) */}
-      {position === 'left' && (
-        <motion.button
-          onClick={canPickUp ? onPickUp : undefined}
-          disabled={!canPickUp}
-          className={cn(
-            'w-10 h-14 sm:w-12 sm:h-16 rounded-lg',
-            'bg-stone-800/80 border-2 flex items-center justify-center',
-            canPickUp
-              ? 'border-green-400 cursor-pointer'
-              : 'border-stone-600',
-            'transition-all'
-          )}
-          whileHover={canPickUp ? { scale: 1.1 } : {}}
-          whileTap={canPickUp ? { scale: 0.95 } : {}}
+      {/* Discarded tile - shown for all opponents */}
+      <motion.button
+        onClick={canPickUp ? onPickUp : undefined}
+        disabled={!canPickUp}
+        className={cn(
+          'w-10 h-14 sm:w-12 sm:h-16 rounded-lg',
+          'bg-stone-800/80 border-2 flex items-center justify-center',
+          canPickUp
+            ? 'border-green-400 cursor-pointer shadow-lg shadow-green-500/30'
+            : 'border-stone-600/50',
+          'transition-all'
+        )}
+        whileHover={canPickUp ? { scale: 1.1 } : {}}
+        whileTap={canPickUp ? { scale: 0.95 } : {}}
+      >
+        {discardedTile ? (
+          <div className="transform scale-[0.6] sm:scale-75">
+            <TurkishTile tile={discardedTile} okeyTile={okeyTile} size="sm" />
+          </div>
+        ) : (
+          <span className="text-stone-500 text-[10px]">Boş</span>
+        )}
+      </motion.button>
+      {canPickUp && discardedTile && (
+        <motion.div
+          className="text-[10px] text-green-400 font-bold"
+          animate={{ opacity: [1, 0.5, 1] }}
+          transition={{ repeat: Infinity, duration: 1 }}
         >
-          {lastDiscard ? (
-            <div className="transform scale-[0.6] sm:scale-75">
-              <TurkishTile tile={lastDiscard} okeyTile={okeyTile} size="sm" />
-            </div>
-          ) : (
-            <span className="text-stone-500 text-[8px]">-</span>
-          )}
-        </motion.button>
+          Al
+        </motion.div>
       )}
     </div>
   );
@@ -322,20 +329,30 @@ function PlayerRack({
           <span className="hidden sm:inline">Seri Diz</span>
         </button>
 
-        {/* Discard drop zone */}
-        {canDiscard && (
-          <div
+        {/* Discard button/drop zone */}
+        {canDiscard && selectedTileId && (
+          <motion.button
+            onClick={() => {
+              if (selectedTileId && onDiscardDrop) {
+                onDiscardDrop(selectedTileId);
+              }
+            }}
             className={cn(
-              'flex items-center gap-1 px-3 py-2 rounded-lg',
-              'bg-red-600/80 border-2 border-dashed border-red-400',
-              'text-white text-xs sm:text-sm font-bold'
+              'flex items-center gap-1 px-4 py-2 rounded-lg',
+              'bg-gradient-to-b from-red-500 to-red-600',
+              'border-2 border-red-400',
+              'text-white text-xs sm:text-sm font-bold',
+              'shadow-lg shadow-red-500/30',
+              'cursor-pointer'
             )}
             onDrop={handleDiscardDrop}
             onDragOver={(e) => e.preventDefault()}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
           >
             <span>🗑️</span>
-            <span className="hidden sm:inline">At</span>
-          </div>
+            <span>At</span>
+          </motion.button>
         )}
       </div>
 
@@ -392,6 +409,9 @@ interface CenterAreaProps {
   okeyTile?: TileType | null;
   canDraw: boolean;
   onDrawFromPile: () => void;
+  lastDiscardedTile?: TileType | null;
+  canPickDiscard?: boolean;
+  onPickDiscard?: () => void;
 }
 
 function CenterArea({
@@ -400,9 +420,12 @@ function CenterArea({
   okeyTile,
   canDraw,
   onDrawFromPile,
+  lastDiscardedTile,
+  canPickDiscard,
+  onPickDiscard,
 }: CenterAreaProps) {
   return (
-    <div className="flex-1 flex items-center justify-center gap-6 sm:gap-12">
+    <div className="flex-1 flex items-center justify-center gap-4 sm:gap-8">
       {/* Draw pile */}
       <motion.button
         onClick={onDrawFromPile}
@@ -492,6 +515,47 @@ function CenterArea({
           )}
         </div>
       )}
+
+      {/* Discard pile - shows last discarded tile prominently */}
+      <motion.button
+        onClick={canPickDiscard ? onPickDiscard : undefined}
+        disabled={!canPickDiscard}
+        className={cn(
+          'flex flex-col items-center'
+        )}
+        whileHover={canPickDiscard ? { scale: 1.05 } : {}}
+        whileTap={canPickDiscard ? { scale: 0.95 } : {}}
+      >
+        <div className="text-[10px] sm:text-xs text-amber-300/80 font-medium mb-1">
+          ATILAN
+        </div>
+        <div className={cn(
+          'w-14 h-[72px] sm:w-16 sm:h-20 rounded-lg',
+          'flex items-center justify-center',
+          'bg-stone-800/80 border-2',
+          lastDiscardedTile
+            ? canPickDiscard
+              ? 'border-green-400 shadow-lg shadow-green-500/30'
+              : 'border-amber-600'
+            : 'border-stone-600/50',
+          canPickDiscard && 'cursor-pointer'
+        )}>
+          {lastDiscardedTile ? (
+            <TurkishTile tile={lastDiscardedTile} okeyTile={okeyTile} size="md" />
+          ) : (
+            <span className="text-stone-500 text-xs">Boş</span>
+          )}
+        </div>
+        {canPickDiscard && lastDiscardedTile && (
+          <motion.div
+            className="mt-1 text-xs text-green-400 font-bold"
+            animate={{ opacity: [1, 0.5, 1] }}
+            transition={{ repeat: Infinity, duration: 1 }}
+          >
+            Tıkla Al
+          </motion.div>
+        )}
+      </motion.button>
     </div>
   );
 }
@@ -634,40 +698,22 @@ export const TurkishGameBoard = memo(function TurkishGameBoard({
             </motion.button>
           )}
 
-          {canDiscard && (
-            <>
-              <motion.button
-                onClick={onDiscard}
-                className={cn(
-                  'px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg font-bold text-sm',
-                  'bg-gradient-to-b from-red-500 to-red-600',
-                  'border border-red-400 text-white',
-                  'shadow-lg shadow-red-500/30'
-                )}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                At
-              </motion.button>
-
-              {currentPlayer && currentPlayer.tiles.length === 15 && (
-                <motion.button
-                  onClick={onDeclareWin}
-                  className={cn(
-                    'px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg font-bold text-sm',
-                    'bg-gradient-to-b from-amber-500 to-amber-600',
-                    'border border-amber-400 text-stone-900',
-                    'shadow-lg shadow-amber-500/30'
-                  )}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  animate={{ scale: [1, 1.05, 1] }}
-                  transition={{ repeat: Infinity, duration: 1 }}
-                >
-                  Bitir! 🏆
-                </motion.button>
+          {canDiscard && currentPlayer && currentPlayer.tiles.length === 15 && (
+            <motion.button
+              onClick={onDeclareWin}
+              className={cn(
+                'px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg font-bold text-sm',
+                'bg-gradient-to-b from-amber-500 to-amber-600',
+                'border border-amber-400 text-stone-900',
+                'shadow-lg shadow-amber-500/30'
               )}
-            </>
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              animate={{ scale: [1, 1.05, 1] }}
+              transition={{ repeat: Infinity, duration: 1 }}
+            >
+              Bitir! 🏆
+            </motion.button>
           )}
         </div>
       </div>
@@ -703,6 +749,7 @@ export const TurkishGameBoard = memo(function TurkishGameBoard({
                 isThinking={isProcessingAI && game.currentTurn === topOpp.index}
                 position="top"
                 okeyTile={game.okeyTile}
+                discardedTile={lastDiscardedTile}
               />
             )}
           </div>
@@ -710,7 +757,7 @@ export const TurkishGameBoard = memo(function TurkishGameBoard({
           {/* Middle row - Left opponent, Center, Right opponent */}
           <div className="flex-1 flex items-center min-h-0">
             {/* Left opponent */}
-            <div className="flex-shrink-0 w-16 sm:w-24">
+            <div className="flex-shrink-0 w-20 sm:w-28">
               {leftOpp && (
                 <OpponentAvatar
                   player={leftOpp.player}
@@ -718,7 +765,7 @@ export const TurkishGameBoard = memo(function TurkishGameBoard({
                   isThinking={isProcessingAI && game.currentTurn === leftOpp.index}
                   position="left"
                   okeyTile={game.okeyTile}
-                  lastDiscard={lastDiscardedTile}
+                  discardedTile={lastDiscardedTile}
                   canPickUp={canPickFromLeftOpponent}
                   onPickUp={onDrawFromDiscard}
                 />
@@ -732,10 +779,13 @@ export const TurkishGameBoard = memo(function TurkishGameBoard({
               okeyTile={game.okeyTile}
               canDraw={canDraw}
               onDrawFromPile={onDrawFromPile}
+              lastDiscardedTile={lastDiscardedTile}
+              canPickDiscard={canPickFromLeftOpponent}
+              onPickDiscard={onDrawFromDiscard}
             />
 
             {/* Right opponent */}
-            <div className="flex-shrink-0 w-16 sm:w-24">
+            <div className="flex-shrink-0 w-20 sm:w-28">
               {rightOpp && (
                 <OpponentAvatar
                   player={rightOpp.player}
@@ -743,6 +793,7 @@ export const TurkishGameBoard = memo(function TurkishGameBoard({
                   isThinking={isProcessingAI && game.currentTurn === rightOpp.index}
                   position="right"
                   okeyTile={game.okeyTile}
+                  discardedTile={lastDiscardedTile}
                 />
               )}
             </div>
@@ -784,6 +835,88 @@ export const TurkishGameBoard = memo(function TurkishGameBoard({
           onPickFromLeft={onDrawFromDiscard}
         />
       </div>
+
+      {/* Game Over Overlay */}
+      <AnimatePresence>
+        {game.status === 'finished' && game.winnerId !== undefined && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm"
+          >
+            <motion.div
+              initial={{ scale: 0.8, y: 50 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.8, y: 50 }}
+              className="bg-gradient-to-b from-stone-800 to-stone-900 rounded-2xl border-2 border-amber-500/50 p-6 sm:p-8 max-w-lg w-full mx-4 shadow-2xl"
+            >
+              {/* Winner announcement */}
+              <div className="text-center mb-6">
+                <motion.div
+                  className="text-6xl mb-4"
+                  animate={{ scale: [1, 1.2, 1], rotate: [0, 10, -10, 0] }}
+                  transition={{ repeat: Infinity, duration: 2 }}
+                >
+                  🏆
+                </motion.div>
+                <h2 className="text-2xl sm:text-3xl font-black text-amber-400 mb-2">
+                  {game.winnerId === currentPlayerId
+                    ? 'Kazandın!'
+                    : `${game.players.find(p => p.id === game.winnerId)?.name} Kazandı!`}
+                </h2>
+                <p className="text-stone-400">
+                  {game.winnerId === currentPlayerId
+                    ? 'Tebrikler! Elini başarıyla bitirdin.'
+                    : 'Bir sonraki elde görüşürüz!'}
+                </p>
+              </div>
+
+              {/* Winner's hand */}
+              <div className="mb-6">
+                <h3 className="text-sm font-bold text-amber-300 mb-3 text-center">
+                  Kazanan El:
+                </h3>
+                <div className="flex flex-wrap justify-center gap-1">
+                  {game.players.find(p => p.id === game.winnerId)?.tiles.map((tile) => (
+                    <div key={tile.id} className="transform scale-75 sm:scale-90">
+                      <TurkishTile tile={tile} okeyTile={game.okeyTile} size="sm" />
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                <button
+                  onClick={() => window.location.reload()}
+                  className={cn(
+                    'px-6 py-3 rounded-xl font-bold',
+                    'bg-gradient-to-b from-amber-500 to-amber-600',
+                    'border border-amber-400 text-stone-900',
+                    'shadow-lg hover:from-amber-400 hover:to-amber-500',
+                    'transition-all active:scale-95'
+                  )}
+                >
+                  Yeni Oyun
+                </button>
+                <button
+                  onClick={() => window.location.href = '/'}
+                  className={cn(
+                    'px-6 py-3 rounded-xl font-bold',
+                    'bg-stone-700 border border-stone-600',
+                    'text-white',
+                    'shadow-lg hover:bg-stone-600',
+                    'transition-all active:scale-95'
+                  )}
+                >
+                  Ana Sayfa
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 });
