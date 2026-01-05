@@ -125,6 +125,35 @@ export const TurkishTile = memo(function TurkishTile({
     );
   }
 
+  // Okey tile - Show as blank ivory tile (face down style but white)
+  if (isOkey) {
+    return (
+      <motion.div
+        className={cn(
+          sizeConfig.w,
+          sizeConfig.h,
+          'rounded-lg relative overflow-hidden cursor-pointer select-none',
+          'bg-gradient-to-b from-amber-50 via-white to-amber-50',
+          'border-2 border-amber-300',
+          'shadow-md hover:shadow-lg',
+          isSelected && 'tile-selected z-10',
+          className
+        )}
+        onClick={onClick}
+        onDoubleClick={onDoubleClick}
+        draggable={draggable}
+        {...(onDragStart && { onDragStart: onDragStart as never })}
+        {...(onDragEnd && { onDragEnd: onDragEnd as never })}
+        whileHover={!isSelected ? { y: -4, scale: 1.02 } : {}}
+        whileTap={{ scale: 0.98 }}
+        layout
+      >
+        {/* Subtle shine effect */}
+        <div className="absolute inset-0 bg-gradient-to-br from-white/60 via-transparent to-transparent rounded-lg pointer-events-none" />
+      </motion.div>
+    );
+  }
+
   // Joker (Sahte Okey) - Special design
   if (isJoker) {
     return (
@@ -172,8 +201,6 @@ export const TurkishTile = memo(function TurkishTile({
         'border-2 border-amber-200',
         // Shadow and depth
         'shadow-md hover:shadow-lg',
-        // Okey tile special styling
-        isOkey && 'ring-2 ring-yellow-400 tile-okey-glow',
         // Selected state
         isSelected && 'tile-selected z-10',
         className
@@ -219,13 +246,6 @@ export const TurkishTile = memo(function TurkishTile({
           colorConfig.bg
         )}
       />
-
-      {/* Okey indicator badge */}
-      {isOkey && (
-        <div className="absolute -top-1 -right-1 bg-yellow-500 text-yellow-900 text-[8px] font-bold px-1 rounded shadow">
-          OK
-        </div>
-      )}
 
       {/* Subtle shine effect */}
       <div className="absolute inset-0 bg-gradient-to-br from-white/40 via-transparent to-transparent rounded-lg pointer-events-none" />
