@@ -18,6 +18,40 @@ export interface Tile {
   isFaceDown?: boolean; // For display purposes
 }
 
+// ============================================
+// 101 OKEY SPECIFIC TYPES
+// ============================================
+
+// A meld (group) on the table - can be a set (per) or run (seri)
+export interface Meld {
+  id: string;
+  type: 'set' | 'run';  // set = same number different colors, run = consecutive same color
+  tiles: Tile[];
+  ownerId: string;      // Player who first laid this meld
+  isLocked: boolean;    // Can't be modified after turn ends
+}
+
+// How a player opened their hand
+export type OpeningType = 'series' | 'pairs' | null;
+
+// 101 Okey turn phases (more complex than regular)
+export type TurnPhase101 =
+  | 'draw'              // Must draw a tile
+  | 'play'              // Can open, add to melds, or discard
+  | 'mustDiscard';      // Must discard to end turn
+
+// 101 Okey specific constants
+export const OKEY101_CONSTANTS = {
+  TILES_PER_PLAYER: 21,
+  TILES_FOR_DEALER: 22,
+  MIN_OPENING_POINTS: 101,
+  MIN_PAIRS_TO_OPEN: 5,
+  UNOPENED_PENALTY: 202,
+  STANDARD_PENALTY: 101,
+  WINNER_BONUS: -101,
+  OKEY_FINISH_MULTIPLIER: 2,
+} as const;
+
 // Game modes
 export type GameMode = 'regular' | 'okey101';
 
@@ -39,8 +73,11 @@ export interface GamePlayer {
   lastDiscardedTile?: Tile | null;  // Last tile this player discarded (visible until next discard)
 
   // 101 Okey specific
-  score101?: number;      // Cumulative score in 101 mode
-  roundScore?: number;    // Score this round
+  score101?: number;        // Cumulative score in 101 mode
+  roundScore?: number;      // Score this round
+  hasOpened?: boolean;      // Has player opened their hand this round?
+  openingType?: OpeningType; // How did they open? (series or pairs)
+  isEliminated?: boolean;   // Has player been eliminated (101+ points)?
 }
 
 // Game state
@@ -78,6 +115,16 @@ export interface GameState {
   createdAt: number;
   startedAt: number | null;
   finishedAt: number | null;
+
+  // ============================================
+  // 101 OKEY SPECIFIC STATE
+  // ============================================
+  tableMelds?: Meld[];              // All melds on the table
+  turnPhase101?: TurnPhase101;      // More detailed turn phase for 101
+  pairsPlayerCount?: number;        // How many players chose pairs opening (max 3)
+  roundResults?: Score101[];        // Results of current/last round
+  drawnTileThisTurn?: Tile | null;  // Tile drawn this turn (for yandan alma rule)
+  tilesPlayedThisTurn?: Tile[];     // Tiles played to table this turn
 }
 
 // Move types
@@ -86,7 +133,11 @@ export type MoveType =
   | 'draw_discard'   // Take from discard pile
   | 'discard'        // Discard a tile
   | 'finish'         // Declare win
-  | 'timeout';       // Turn timed out
+  | 'timeout'        // Turn timed out
+  // 101 Okey specific moves
+  | 'open_hand'      // Open hand with melds (101+ points or 5+ pairs)
+  | 'lay_meld'       // Lay down additional meld after opening
+  | 'add_to_meld';   // Add tile(s) to existing meld
 
 // A game move
 export interface GameMove {

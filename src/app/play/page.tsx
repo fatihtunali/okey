@@ -4,7 +4,10 @@ import { Suspense, useEffect, useState, useCallback } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { TurkishGameBoard, GameChat } from '@/components/game';
+import Okey101GameBoard from '@/components/game/Okey101GameBoard';
+import ScoreBoard101 from '@/components/game/ScoreBoard101';
 import { useGame } from '@/hooks/useGame';
+import { useGame101 } from '@/hooks/useGame101';
 import { useGame as useApiGame } from '@/hooks/useGames';
 import { useSocket } from '@/lib/socket';
 import { randomId } from '@/lib/utils';
@@ -74,11 +77,26 @@ function PlayContent() {
   // API game state (for multiplayer)
   const { data: apiGame, isLoading: isLoadingGame, error: gameError, refetch: refetchGame } = useApiGame(gameId);
 
-  // Local game state (for single player with AI)
+  // Local game state (for single player with AI) - Regular Okey
+  const regularGame = useGame({
+    mode: 'regular',
+    playerName: playerName || session?.user?.name || 'Oyuncu',
+    playerId: session?.user?.id || playerId,
+    turnTimeLimit: 30,
+  });
+
+  // Local game state (for single player with AI) - 101 Okey
+  const okey101Game = useGame101({
+    playerName: playerName || session?.user?.name || 'Oyuncu',
+    playerId: session?.user?.id || playerId,
+    turnTimeLimit: 60,
+  });
+
+  // Select appropriate hook based on mode
+  const is101Mode = mode === 'okey101';
   const {
     game: localGame,
     rackLayout,
-    selectedTileId,
     timeRemaining,
     error: localError,
     isProcessingAI,
@@ -86,18 +104,42 @@ function PlayContent() {
     handleDrawFromPile,
     handleDrawFromDiscard,
     handleDiscard,
-    handleDiscardById,
-    handleDeclareWin,
     handleTileSelect,
     handleTileMove,
     handleSortByGroups,
     handleSortByRuns,
-  } = useGame({
-    mode,
-    playerName: playerName || session?.user?.name || 'Oyuncu',
-    playerId: session?.user?.id || playerId,
-    turnTimeLimit: 30,
-  });
+  } = is101Mode ? {
+    game: okey101Game.game,
+    rackLayout: okey101Game.rackLayout,
+    timeRemaining: okey101Game.timeRemaining,
+    error: okey101Game.error,
+    isProcessingAI: okey101Game.isProcessingAI,
+    initGame: okey101Game.initGame,
+    handleDrawFromPile: okey101Game.handleDrawFromPile,
+    handleDrawFromDiscard: okey101Game.handleDrawFromDiscard,
+    handleDiscard: okey101Game.handleDiscard,
+    handleTileSelect: okey101Game.handleTileSelect,
+    handleTileMove: okey101Game.handleTileMove,
+    handleSortByGroups: okey101Game.handleSortByGroups,
+    handleSortByRuns: okey101Game.handleSortByRuns,
+  } : {
+    game: regularGame.game,
+    rackLayout: regularGame.rackLayout,
+    timeRemaining: regularGame.timeRemaining,
+    error: regularGame.error,
+    isProcessingAI: regularGame.isProcessingAI,
+    initGame: regularGame.initGame,
+    handleDrawFromPile: regularGame.handleDrawFromPile,
+    handleDrawFromDiscard: regularGame.handleDrawFromDiscard,
+    handleDiscard: regularGame.handleDiscard,
+    handleTileSelect: regularGame.handleTileSelect,
+    handleTileMove: regularGame.handleTileMove,
+    handleSortByGroups: regularGame.handleSortByGroups,
+    handleSortByRuns: regularGame.handleSortByRuns,
+  };
+
+  // Regular okey specific
+  const { selectedTileId, handleDiscardById, handleDeclareWin } = regularGame;
 
   // API game actions
   const handleApiDraw = async (source: 'pile' | 'discard') => {
@@ -400,8 +442,58 @@ function PlayContent() {
         </div>
       )}
 
-      {/* Full screen game board */}
-      {game && (
+      {/* Full screen game board - 101 Okey */}
+      {game && is101Mode && !isApiGame && localGame && (
+        <>
+          <Okey101GameBoard
+            game={localGame}
+            currentPlayerId={session?.user?.id || playerId}
+            rackLayout={okey101Game.rackLayout}
+            selectedTileIds={okey101Game.selectedTileIds}
+            pendingMelds={okey101Game.pendingMelds}
+            onTileSelect={okey101Game.handleTileSelect}
+            onDrawFromPile={okey101Game.handleDrawFromPile}
+            onDrawFromDiscard={okey101Game.handleDrawFromDiscard}
+            onDiscard={okey101Game.handleDiscard}
+            onTileMove={okey101Game.handleTileMove}
+            onSortByGroups={okey101Game.handleSortByGroups}
+            onSortByRuns={okey101Game.handleSortByRuns}
+            onOpenHand={okey101Game.handleOpenHand}
+            onLayMeld={okey101Game.handleLayMeld}
+            onAddToMeld={okey101Game.handleAddToMeld}
+            onAddPendingMeld={okey101Game.addPendingMeld}
+            onRemovePendingMeld={okey101Game.removePendingMeld}
+            onClearSelection={okey101Game.clearSelection}
+            getPendingMeldsPoints={okey101Game.getPendingMeldsPoints}
+            timeRemaining={okey101Game.timeRemaining}
+            isProcessingAI={okey101Game.isProcessingAI}
+            error={okey101Game.error}
+          />
+
+          {/* Round results modal for 101 Okey */}
+          {okey101Game.showRoundResults && localGame.roundResults && (
+            <ScoreBoard101
+              game={localGame}
+              roundResults={localGame.roundResults}
+              onNextRound={() => {
+                // Check if game is over
+                const activePlayers = localGame.players.filter(p => !p.isEliminated);
+                if (activePlayers.length <= 1) {
+                  okey101Game.setShowRoundResults(false);
+                  // Game is over, reinit
+                } else {
+                  okey101Game.handleNextRound();
+                }
+              }}
+              onExit={() => router.push('/')}
+              isGameOver={localGame.players.filter(p => !p.isEliminated).length <= 1}
+            />
+          )}
+        </>
+      )}
+
+      {/* Full screen game board - Regular Okey */}
+      {game && !is101Mode && (
         <TurkishGameBoard
             game={isApiGame ? convertApiGameToLocal(apiGame!) : localGame!}
             currentPlayerId={session?.user?.id || playerId}
