@@ -31,7 +31,7 @@ const sizes = {
   xs: { w: 'w-8', h: 'h-11', text: 'text-base', dot: 'w-1 h-1' },
   sm: { w: 'w-10', h: 'h-14', text: 'text-lg', dot: 'w-1.5 h-1.5' },
   md: { w: 'w-12', h: 'h-16', text: 'text-xl', dot: 'w-1.5 h-1.5' },
-  lg: { w: 'w-14', h: 'h-[72px]', text: 'text-2xl', dot: 'w-2 h-2' },
+  lg: { w: 'w-[6vw] sm:w-14', h: 'h-[8vw] sm:h-[72px]', text: 'text-lg sm:text-2xl', dot: 'w-1.5 h-1.5 sm:w-2 sm:h-2' },
   xl: { w: 'w-[11vw] sm:w-16', h: 'h-[14vw] sm:h-20', text: 'text-2xl sm:text-3xl', dot: 'w-2 h-2' },
   '2xl': { w: 'w-[12vw] sm:w-20', h: 'h-[15vw] sm:h-24', text: 'text-3xl sm:text-4xl', dot: 'w-2.5 h-2.5' },
 };

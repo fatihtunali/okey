@@ -22,7 +22,7 @@ interface UseGameOptions {
   turnTimeLimit?: number;
 }
 
-const RACK_SIZE = 30; // 15 slots per row, 2 rows
+const RACK_SIZE = 28; // 14 slots per row, 2 rows
 
 export function useGame(options: UseGameOptions) {
   const [game, setGame] = useState<GameState | null>(null);

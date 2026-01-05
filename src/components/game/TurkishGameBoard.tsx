@@ -240,8 +240,8 @@ function PlayerRack({
     }
   };
 
-  // Detect if mobile (will be checked via CSS, but also for slot count)
-  const isMobileView = typeof window !== 'undefined' && window.innerWidth < 640;
+  // Fixed 14 slots per row (28 total) - standard Okey rack
+  const SLOTS_PER_ROW = 14;
 
   const renderSlot = (index: number, row: 'top' | 'bottom') => {
     const slotTileId = rackLayout[index];
@@ -259,7 +259,7 @@ function PlayerRack({
             tile={tile}
             okeyTile={okeyTile}
             isSelected={selectedTileId === tile.id}
-            size="xl"
+            size="lg"
             onClick={canSelect ? () => onTileSelect(tile) : undefined}
             onDoubleClick={canDiscard ? () => handleDoubleClick(tile) : undefined}
             draggable
@@ -273,7 +273,7 @@ function PlayerRack({
       <div
         key={index}
         className={cn(
-          'w-[11vw] h-[14vw] sm:w-16 sm:h-20',
+          'w-[6vw] h-[8vw] sm:w-14 sm:h-[72px]',
           'rounded-md border-2 border-dashed flex-shrink-0',
           'transition-all duration-200',
           isDragOver
@@ -287,14 +287,9 @@ function PlayerRack({
     );
   };
 
-  // Calculate slots based on actual tiles
-  // Mobile: max 8 per row for larger tiles, Desktop: up to 15
-  const totalTiles = tiles.length;
-  const maxSlotsPerRow = isMobileView ? 8 : 15;
-  const minSlots = Math.max(6, Math.ceil(totalTiles / 2) + 1);
-  const slotsPerRow = Math.min(maxSlotsPerRow, Math.max(minSlots, 6));
-  const topRow = Array.from({ length: slotsPerRow }, (_, i) => i);
-  const bottomRow = Array.from({ length: slotsPerRow }, (_, i) => i + slotsPerRow);
+  // Fixed 14 slots per row
+  const topRow = Array.from({ length: SLOTS_PER_ROW }, (_, i) => i);
+  const bottomRow = Array.from({ length: SLOTS_PER_ROW }, (_, i) => i + SLOTS_PER_ROW);
 
   return (
     <div className="w-full flex flex-col items-center px-2 sm:px-4">
